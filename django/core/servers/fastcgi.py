@@ -93,10 +93,7 @@ def runfastcgi(argset=[], **kwargs):
     options = FASTCGI_OPTIONS.copy()
     options.update(kwargs)
     for x in argset:
-        if "=" in x:
-            k, v = x.split('=', 1)
-        else:
-            k, v = x, True
+        k, v = x.split('=', 1) if "=" in x else (x, True)
         options[k.lower()] = v
 
     if "help" in options:
@@ -148,7 +145,7 @@ def runfastcgi(argset=[], **kwargs):
         wsgi_opts['bindAddress'] = (options["host"], int(options["port"]))
     elif options["socket"] and not options["host"] and not options["port"]:
         wsgi_opts['bindAddress'] = options["socket"]
-    elif not options["socket"] and not options["host"] and not options["port"]:
+    elif not (options["socket"] or options["host"] or options["port"]):
         wsgi_opts['bindAddress'] = None
     else:
         return fastcgi_help("Invalid combination of host, port, socket.")

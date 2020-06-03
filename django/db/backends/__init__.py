@@ -451,23 +451,24 @@ class BaseDatabaseWrapper(object):
         Closes the current connection if unrecoverable errors have occurred,
         or if it outlived its maximum age.
         """
-        if self.connection is not None:
-            # If the application didn't restore the original autocommit setting,
-            # don't take chances, drop the connection.
-            if self.get_autocommit() != self.settings_dict['AUTOCOMMIT']:
+        if self.connection is None:
+            return
+        # If the application didn't restore the original autocommit setting,
+        # don't take chances, drop the connection.
+        if self.get_autocommit() != self.settings_dict['AUTOCOMMIT']:
+            self.close()
+            return
+
+        if self.errors_occurred:
+            if self.is_usable():
+                self.errors_occurred = False
+            else:
                 self.close()
                 return
 
-            if self.errors_occurred:
-                if self.is_usable():
-                    self.errors_occurred = False
-                else:
-                    self.close()
-                    return
-
-            if self.close_at is not None and time.time() >= self.close_at:
-                self.close()
-                return
+        if self.close_at is not None and time.time() >= self.close_at:
+            self.close()
+            return
 
     ##### Thread safety handling #####
 
@@ -892,7 +893,7 @@ class BaseDatabaseOperations(object):
         elif params is None:
             u_params = ()
         else:
-            u_params = dict((to_unicode(k), to_unicode(v)) for k, v in params.items())
+            u_params = {to_unicode(k): to_unicode(v) for k, v in params.items()}
 
         return six.text_type("QUERY = %r - PARAMS = %r") % (sql, u_params)
 
@@ -1298,10 +1299,8 @@ class BaseDatabaseIntrospection(object):
         for app_config in apps.get_app_configs():
             all_models.extend(router.get_migratable_models(app_config, self.connection.alias))
         tables = list(map(self.table_name_converter, tables))
-        return set([
-            m for m in all_models
-            if self.table_name_converter(m._meta.db_table) in tables
-        ])
+        return {m for m in all_models
+                if self.table_name_converter(m._meta.db_table) in tables}
 
     def sequence_list(self):
         "Returns a list of information about all DB sequences for all models in all apps."

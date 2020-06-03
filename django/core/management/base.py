@@ -353,11 +353,7 @@ class BaseCommand(object):
     def validate(self, app_config=None, display_num_errors=False):
         """ Deprecated. Delegates to ``check``."""
 
-        if app_config is None:
-            app_configs = None
-        else:
-            app_configs = [app_config]
-
+        app_configs = None if app_config is None else [app_config]
         return self.check(app_configs=app_configs, display_num_errors=display_num_errors)
 
     def check(self, app_configs=None, tags=None, display_num_errors=False):

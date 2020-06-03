@@ -27,9 +27,7 @@ def mapping(data_source, geom_name='geom', layer_key=0, multi_geom=False):
     if isinstance(data_source, six.string_types):
         # Instantiating the DataSource from the string.
         data_source = DataSource(data_source)
-    elif isinstance(data_source, DataSource):
-        pass
-    else:
+    elif not isinstance(data_source, DataSource):
         raise TypeError('Data source parameter must be a string or a DataSource object.')
 
     # Creating the dictionary.
@@ -42,10 +40,7 @@ def mapping(data_source, geom_name='geom', layer_key=0, multi_geom=False):
             mfield += 'field'
         _mapping[mfield] = field
     gtype = data_source[layer_key].geom_type
-    if multi_geom and gtype.num in (1, 2, 3):
-        prefix = 'MULTI'
-    else:
-        prefix = ''
+    prefix = 'MULTI' if multi_geom and gtype.num in (1, 2, 3) else ''
     _mapping[geom_name] = prefix + str(gtype).upper()
     return _mapping
 
@@ -118,7 +113,7 @@ def ogrinspect(*args, **kwargs):
 
     Note: This routine calls the _ogrinspect() helper to do the heavy lifting.
     """
-    return '\n'.join(s for s in _ogrinspect(*args, **kwargs))
+    return '\n'.join(iter(_ogrinspect(*args, **kwargs)))
 
 
 def _ogrinspect(data_source, model_name, geom_name='geom', layer_key=0, srid=None,

@@ -5,12 +5,9 @@ from django.utils.six.moves import zip_longest
 class SQLCompiler(compiler.SQLCompiler):
     def resolve_columns(self, row, fields=()):
         # If this query has limit/offset information, then we expect the
-        # first column to be an extra "_RN" column that we need to throw
-        # away.
-        if self.query.high_mark is not None or self.query.low_mark:
-            rn_offset = 1
-        else:
-            rn_offset = 0
+            # first column to be an extra "_RN" column that we need to throw
+            # away.
+        rn_offset = 1 if self.query.high_mark is not None or self.query.low_mark else 0
         index_start = rn_offset + len(self.query.extra_select)
         values = [self.query.convert_values(v, None, connection=self.connection)
                   for v in row[rn_offset:index_start]]

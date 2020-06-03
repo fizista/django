@@ -74,14 +74,10 @@ class RunSQL(Operation):
         # First, strip comments
         sql = "\n".join([x.strip().replace("%", "%%") for x in re.split(comment_regex, sql) if x.strip()])
         # Now get each statement
-        for st in re.split(regex, sql)[1:][::2]:
-            yield st
+        yield from re.split(regex, sql)[1:][::2]
 
     def database_forwards(self, app_label, schema_editor, from_state, to_state):
-        if self.multiple:
-            statements = self._split_sql(self.sql)
-        else:
-            statements = [self.sql]
+        statements = self._split_sql(self.sql) if self.multiple else [self.sql]
         for statement in statements:
             schema_editor.execute(statement)
 

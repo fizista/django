@@ -121,7 +121,7 @@ class EmailValidator(object):
     def __call__(self, value):
         value = force_text(value)
 
-        if not value or '@' not in value:
+        if not (value and '@' in value):
             raise ValidationError(self.message, code=self.code)
 
         user_part, domain_part = value.rsplit('@', 1)
@@ -129,15 +129,17 @@ class EmailValidator(object):
         if not self.user_regex.match(user_part):
             raise ValidationError(self.message, code=self.code)
 
-        if (not domain_part in self.domain_whitelist and
-                not self.domain_regex.match(domain_part)):
+        if not (
+            domain_part in self.domain_whitelist
+            or self.domain_regex.match(domain_part)
+        ):
             # Try for possible IDN domain-part
             try:
                 domain_part = domain_part.encode('idna').decode('ascii')
-                if not self.domain_regex.match(domain_part):
-                    raise ValidationError(self.message, code=self.code)
-                else:
+                if self.domain_regex.match(domain_part):
                     return
+                else:
+                    raise ValidationError(self.message, code=self.code)
             except UnicodeError:
                 pass
             raise ValidationError(self.message, code=self.code)

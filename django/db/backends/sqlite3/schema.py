@@ -13,8 +13,8 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         Shortcut to transform a model from old_model into new_model
         """
         # Work out the new fields dict / mapping
-        body = dict((f.name, f) for f in model._meta.local_fields)
-        mapping = dict((f.column, f.column) for f in model._meta.local_fields)
+        body = {f.name: f for f in model._meta.local_fields}
+        mapping = {f.column: f.column for f in model._meta.local_fields}
         # If any of the new or altered fields is introducing a new PK,
         # remove the old one
         restore_pk_field = None
@@ -23,7 +23,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
                 if field.primary_key:
                     field.primary_key = False
                     restore_pk_field = field
-                    if field.auto_created:
+                    if restore_pk_field.auto_created:
                         del body[name]
                         del mapping[field.column]
         # Add in any created fields

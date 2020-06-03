@@ -277,7 +277,7 @@ class LayerMapping(object):
         if isinstance(unique, (list, tuple)):
             # List of fields to determine uniqueness with
             for attr in unique:
-                if not attr in self.mapping:
+                if attr not in self.mapping:
                     raise ValueError
         elif isinstance(unique, six.string_types):
             # Only a single field passed in.
@@ -329,7 +329,7 @@ class LayerMapping(object):
         if isinstance(self.unique, six.string_types):
             return {self.unique: kwargs[self.unique]}
         else:
-            return dict((fld, kwargs[fld]) for fld in self.unique)
+            return {fld: kwargs[fld] for fld in self.unique}
 
     #### Verification routines used in constructing model keyword arguments. ####
     def verify_ogr_field(self, ogr_field, model_field):
@@ -339,7 +339,7 @@ class LayerMapping(object):
         otherwise the proper exception is raised.
         """
         if (isinstance(ogr_field, OFTString) and
-                isinstance(model_field, (models.CharField, models.TextField))):
+                    isinstance(model_field, (models.CharField, models.TextField))):
             if self.encoding:
                 # The encoding for OGR data sources may be specified here
                 # (e.g., 'cp437' for Census Bureau boundary files).
@@ -365,12 +365,8 @@ class LayerMapping(object):
             max_prec = model_field.max_digits - model_field.decimal_places
 
             # Getting the digits to the left of the decimal place for the
-            # given decimal.
-            if d_idx < 0:
-                n_prec = len(digits[:d_idx])
-            else:
-                n_prec = len(digits) + d_idx
-
+                    # given decimal.
+            n_prec = len(digits[:d_idx]) if d_idx < 0 else len(digits) + d_idx
             # If we have more than the maximum digits allowed, then throw an
             # InvalidDecimal exception.
             if n_prec > max_prec:
@@ -517,11 +513,7 @@ class LayerMapping(object):
                 progress_interval = progress
 
         def _save(feat_range=default_range, num_feat=0, num_saved=0):
-            if feat_range:
-                layer_iter = self.layer[feat_range]
-            else:
-                layer_iter = self.layer
-
+            layer_iter = self.layer[feat_range] if feat_range else self.layer
             for feat in layer_iter:
                 num_feat += 1
                 # Getting the keyword arguments

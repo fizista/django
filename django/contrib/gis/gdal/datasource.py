@@ -60,10 +60,7 @@ class DataSource(GDALBase):
     #### Python 'magic' routines ####
     def __init__(self, ds_input, ds_driver=False, write=False, encoding='utf-8'):
         # The write flag.
-        if write:
-            self._write = 1
-        else:
-            self._write = 0
+        self._write = 1 if write else 0
         # See also http://trac.osgeo.org/gdal/wiki/rfc23_ogr_unicode
         self.encoding = encoding
 

@@ -68,11 +68,12 @@ class MigrationGraph(object):
         Returns all root nodes - that is, nodes with no dependencies inside
         their app. These are the starting point for an app.
         """
-        roots = set()
-        for node in self.nodes:
-            if not any(key[0] == node[0] for key in self.dependencies.get(node, set())) and (not app or app == node[0]):
-                roots.add(node)
-        return roots
+        return {
+            node
+            for node in self.nodes
+            if all(key[0] != node[0] for key in self.dependencies.get(node, set()))
+            and ((not app or app == node[0]))
+        }
 
     def leaf_nodes(self, app=None):
         """
@@ -82,11 +83,12 @@ class MigrationGraph(object):
         gets handled further up, in the interactive command - it's usually the
         result of a VCS merge and needs some user input.
         """
-        leaves = set()
-        for node in self.nodes:
-            if not any(key[0] == node[0] for key in self.dependents.get(node, set())) and (not app or app == node[0]):
-                leaves.add(node)
-        return leaves
+        return {
+            node
+            for node in self.nodes
+            if all(key[0] != node[0] for key in self.dependents.get(node, set()))
+            and ((not app or app == node[0]))
+        }
 
     def dfs(self, start, get_children):
         """
@@ -102,8 +104,7 @@ class MigrationGraph(object):
             if start in path:
                 raise CircularDependencyError(path[path.index(start):] + [start])
             # Build our own results list, starting with us
-            results = []
-            results.append(start)
+            results = [start]
             # We need to add to results all the migrations this one depends on
             children = sorted(get_children(start))
             path.append(start)

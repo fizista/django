@@ -47,11 +47,11 @@ class GEOSCoordSeq(GEOSBase):
     def __setitem__(self, index, value):
         "Sets the coordinate sequence value at the given index."
         # Checking the input value
-        if isinstance(value, (list, tuple)):
-            pass
-        elif numpy and isinstance(value, numpy.ndarray):
-            pass
-        else:
+        if not (
+            isinstance(value, (list, tuple))
+            or numpy
+            and isinstance(value, numpy.ndarray)
+        ):
             raise TypeError('Must set coordinate with a sequence (list, tuple, or numpy array).')
         # Checking the dims of the input
         if self.dims == 3 and self._z:
@@ -145,11 +145,8 @@ class GEOSCoordSeq(GEOSBase):
     def kml(self):
         "Returns the KML representation for the coordinates."
         # Getting the substitution string depending on whether the coordinates have
-        #  a Z dimension.
-        if self.hasz:
-            substr = '%s,%s,%s '
-        else:
-            substr = '%s,%s,0 '
+            #  a Z dimension.
+        substr = '%s,%s,%s ' if self.hasz else '%s,%s,0 '
         return '<coordinates>%s</coordinates>' % \
             ''.join(substr % self[i] for i in xrange(len(self))).strip()
 

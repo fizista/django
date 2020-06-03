@@ -96,10 +96,7 @@ class ChangeList(six.with_metaclass(RenameChangeListMethods)):
         if ERROR_FLAG in self.params:
             del self.params[ERROR_FLAG]
 
-        if self.is_popup:
-            self.list_editable = ()
-        else:
-            self.list_editable = list_editable
+        self.list_editable = () if self.is_popup else list_editable
         self.query = request.GET.get(SEARCH_VAR, '')
         self.queryset = self.get_queryset(request)
         self.get_results(request)
@@ -394,9 +391,11 @@ class ChangeList(six.with_metaclass(RenameChangeListMethods)):
         if self.list_select_related is True:
             return qs.select_related()
 
-        if self.list_select_related is False:
-            if self.has_related_field_in_list_display():
-                return qs.select_related()
+        if (
+            self.list_select_related is False
+            and self.has_related_field_in_list_display()
+        ):
+            return qs.select_related()
 
         if self.list_select_related:
             return qs.select_related(*self.list_select_related)

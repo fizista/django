@@ -10,14 +10,8 @@ register = template.Library()
 class FlatpageNode(template.Node):
     def __init__(self, context_name, starts_with=None, user=None):
         self.context_name = context_name
-        if starts_with:
-            self.starts_with = template.Variable(starts_with)
-        else:
-            self.starts_with = None
-        if user:
-            self.user = template.Variable(user)
-        else:
-            self.user = None
+        self.starts_with = template.Variable(starts_with) if starts_with else None
+        self.user = template.Variable(user) if user else None
 
     def render(self, context):
         if 'request' in context:
@@ -79,11 +73,7 @@ def get_flatpages(parser, token):
     if len(bits) >= 3 and len(bits) <= 6:
 
         # If there's an even number of bits, there's no prefix
-        if len(bits) % 2 == 0:
-            prefix = bits[1]
-        else:
-            prefix = None
-
+        prefix = bits[1] if len(bits) % 2 == 0 else None
         # The very last bit must be the context name
         if bits[-2] != 'as':
             raise template.TemplateSyntaxError(syntax_message)

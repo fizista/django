@@ -25,11 +25,7 @@ class LineString(GEOSGeometry):
          ls = LineString(Point(1, 1), Point(2, 2))
         """
         # If only one argument provided, set the coords array appropriately
-        if len(args) == 1:
-            coords = args[0]
-        else:
-            coords = args
-
+        coords = args[0] if len(args) == 1 else args
         if isinstance(coords, (tuple, list)):
             # Getting the number of coords and the number of dimensions -- which
             #  must stay the same, e.g., no LineString((1, 2), (1, 2, 3)).

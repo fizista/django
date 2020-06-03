@@ -70,10 +70,7 @@ class LimitedStream(object):
                 break
             self.buffer += chunk
         sio = BytesIO(self.buffer)
-        if size:
-            line = sio.readline(size)
-        else:
-            line = sio.readline()
+        line = sio.readline(size) if size else sio.readline()
         self.buffer = sio.read()
         return line
 

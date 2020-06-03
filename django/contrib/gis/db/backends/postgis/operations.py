@@ -325,11 +325,8 @@ class PostGISOperations(DatabaseOperations, BaseSpatialOperations):
             return 'geography(%s,%d)' % (f.geom_type, f.srid)
         elif self.geometry:
             # Postgis 2.0 supports type-based geometries.
-            # TODO: Support 'M' extension.
-            if f.dim == 3:
-                geom_type = f.geom_type + 'Z'
-            else:
-                geom_type = f.geom_type
+                    # TODO: Support 'M' extension.
+            geom_type = f.geom_type + 'Z' if f.dim == 3 else f.geom_type
             return 'geometry(%s,%d)' % (geom_type, f.srid)
         else:
             return None
@@ -345,11 +342,7 @@ class PostGISOperations(DatabaseOperations, BaseSpatialOperations):
         the newly introduced geography column type introudced in PostGIS 1.5.
         """
         # Getting the distance parameter and any options.
-        if len(dist_val) == 1:
-            value, option = dist_val[0], None
-        else:
-            value, option = dist_val
-
+        value, option = (dist_val[0], None) if len(dist_val) == 1 else dist_val
         # Shorthand boolean flags.
         geodetic = f.geodetic(self.connection)
         geography = f.geography and self.geography

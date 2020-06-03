@@ -165,7 +165,7 @@ class Command(BaseCommand):
                     for migration in merge_migrations
                 ]
                 try:
-                    biggest_number = max([x for x in numbers if x is not None])
+                    biggest_number = max(x for x in numbers if x is not None)
                 except ValueError:
                     biggest_number = 1
                 subclass = type("Migration", (migrations.Migration, ), {

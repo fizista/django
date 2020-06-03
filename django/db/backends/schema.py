@@ -130,10 +130,7 @@ class BaseDatabaseSchemaEditor(object):
         if (field.empty_strings_allowed and not field.primary_key and
                 self.connection.features.interprets_empty_strings_as_nulls):
             null = True
-        if null:
-            sql += " NULL"
-        else:
-            sql += " NOT NULL"
+        sql += " NULL" if null else " NOT NULL"
         # Primary key/unique outputs
         if field.primary_key:
             sql += " PRIMARY KEY"
@@ -270,8 +267,8 @@ class BaseDatabaseSchemaEditor(object):
         Note: The input unique_togethers must be doubly-nested, not the single-
         nested ["foo", "bar"] format.
         """
-        olds = set(tuple(fields) for fields in old_unique_together)
-        news = set(tuple(fields) for fields in new_unique_together)
+        olds = {tuple(fields) for fields in old_unique_together}
+        news = {tuple(fields) for fields in new_unique_together}
         # Deleted uniques
         for fields in olds.difference(news):
             columns = [model._meta.get_field_by_name(field)[0].column for field in fields]
@@ -303,8 +300,8 @@ class BaseDatabaseSchemaEditor(object):
         Note: The input index_togethers must be doubly-nested, not the single-
         nested ["foo", "bar"] format.
         """
-        olds = set(tuple(fields) for fields in old_index_together)
-        news = set(tuple(fields) for fields in new_index_together)
+        olds = {tuple(fields) for fields in old_index_together}
+        news = {tuple(fields) for fields in new_index_together}
         # Deleted indexes
         for fields in olds.difference(news):
             columns = [model._meta.get_field_by_name(field)[0].column for field in fields]
@@ -477,7 +474,7 @@ class BaseDatabaseSchemaEditor(object):
                     },
                 )
         # Removed an index?
-        if old_field.db_index and not new_field.db_index and not old_field.unique and not (not new_field.unique and old_field.unique):
+        if old_field.db_index and not new_field.db_index and not old_field.unique:
             # Find the index for this field
             index_names = self._constraint_names(model, [old_field.column], index=True)
             if strict and len(index_names) != 1:
@@ -629,7 +626,7 @@ class BaseDatabaseSchemaEditor(object):
                 }
             )
         # Added an index?
-        if not old_field.db_index and new_field.db_index and not new_field.unique and not (not old_field.unique and new_field.unique):
+        if not old_field.db_index and new_field.db_index and not new_field.unique:
             self.execute(
                 self.sql_create_index % {
                     "table": self.quote_name(model._meta.db_table),

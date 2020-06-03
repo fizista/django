@@ -92,11 +92,7 @@ class Command(NoArgsCommand):
         if self.clear:
             self.clear_dir('')
 
-        if self.symlink:
-            handler = self.link_file
-        else:
-            handler = self.copy_file
-
+        handler = self.link_file if self.symlink else self.copy_file
         found_files = OrderedDict()
         for finder in finders.get_finders():
             for path, storage in finder.list(self.ignore_patterns):
@@ -171,13 +167,13 @@ class Command(NoArgsCommand):
             raise CommandError("Collecting static files cancelled.")
 
         collected = self.collect()
-        modified_count = len(collected['modified'])
-        unmodified_count = len(collected['unmodified'])
-        post_processed_count = len(collected['post_processed'])
-
         if self.verbosity >= 1:
             template = ("\n%(modified_count)s %(identifier)s %(action)s"
                         "%(destination)s%(unmodified)s%(post_processed)s.\n")
+            modified_count = len(collected['modified'])
+            unmodified_count = len(collected['unmodified'])
+            post_processed_count = len(collected['post_processed'])
+
             summary = template % {
                 'modified_count': modified_count,
                 'identifier': 'static file' + ('' if modified_count == 1 else 's'),
@@ -233,22 +229,28 @@ class Command(NoArgsCommand):
                     pass
                 else:
                     # The full path of the target file
-                    if self.local:
-                        full_path = self.storage.path(prefixed_path)
-                    else:
-                        full_path = None
+                    full_path = self.storage.path(prefixed_path) if self.local else None
                     # Skip the file if the source file is younger
-                    # Avoid sub-second precision (see #14665, #19540)
-                    if (target_last_modified.replace(microsecond=0)
-                            >= source_last_modified.replace(microsecond=0)):
-                        if not ((self.symlink and full_path
-                                 and not os.path.islink(full_path)) or
-                                (not self.symlink and full_path
-                                 and os.path.islink(full_path))):
-                            if prefixed_path not in self.unmodified_files:
-                                self.unmodified_files.append(prefixed_path)
-                            self.log("Skipping '%s' (not modified)" % path)
-                            return False
+                                    # Avoid sub-second precision (see #14665, #19540)
+                    if (
+                        target_last_modified.replace(microsecond=0)
+                        >= source_last_modified.replace(microsecond=0)
+                    ) and not (
+                        (
+                            self.symlink
+                            and full_path
+                            and not os.path.islink(full_path)
+                        )
+                        or (
+                            not self.symlink
+                            and full_path
+                            and os.path.islink(full_path)
+                        )
+                    ):
+                        if prefixed_path not in self.unmodified_files:
+                            self.unmodified_files.append(prefixed_path)
+                        self.log("Skipping '%s' (not modified)" % path)
+                        return False
             # Then delete the existing file if really needed
             if self.dry_run:
                 self.log("Pretending to delete '%s'" % path)
@@ -302,5 +304,5 @@ class Command(NoArgsCommand):
             self.log("Copying '%s'" % source_path, level=1)
             with source_storage.open(path) as source_file:
                 self.storage.save(prefixed_path, source_file)
-        if not prefixed_path in self.copied_files:
+        if prefixed_path not in self.copied_files:
             self.copied_files.append(prefixed_path)

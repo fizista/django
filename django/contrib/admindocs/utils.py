@@ -23,7 +23,7 @@ def trim_docstring(docstring):
 
     Based on http://www.python.org/peps/pep-0257.html#handling-docstring-indentation
     """
-    if not docstring or not docstring.strip():
+    if not (docstring and docstring.strip()):
         return ''
     # Convert tabs to spaces and split into lines
     lines = docstring.expandtabs().splitlines()
@@ -51,10 +51,7 @@ def parse_docstring(docstring):
             body = "\n\n".join(parts[1:])
         else:
             metadata = dict(metadata.items())
-            if metadata:
-                body = "\n\n".join(parts[1:-1])
-            else:
-                body = "\n\n".join(parts[1:])
+            body = "\n\n".join(parts[1:-1]) if metadata else "\n\n".join(parts[1:])
     return title, body, metadata
 
 

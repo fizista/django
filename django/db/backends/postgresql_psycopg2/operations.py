@@ -79,7 +79,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         return lookup
 
     def field_cast_sql(self, db_type, internal_type):
-        if internal_type == "GenericIPAddressField" or internal_type == "IPAddressField":
+        if internal_type in ["GenericIPAddressField", "IPAddressField"]:
             return 'HOST(%s)'
         return '%s'
 

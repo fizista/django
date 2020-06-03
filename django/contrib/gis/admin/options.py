@@ -126,12 +126,8 @@ class GeoModelAdmin(ModelAdmin):
 from django.contrib.gis import gdal
 if gdal.HAS_GDAL:
     # Use the official spherical mercator projection SRID on versions
-    # of GDAL that support it; otherwise, fallback to 900913.
-    if gdal.GDAL_VERSION >= (1, 7):
-        spherical_mercator_srid = 3857
-    else:
-        spherical_mercator_srid = 900913
-
+        # of GDAL that support it; otherwise, fallback to 900913.
+    spherical_mercator_srid = 3857 if gdal.GDAL_VERSION >= (1, 7) else 900913
     class OSMGeoAdmin(GeoModelAdmin):
         map_template = 'gis/admin/osm.html'
         num_zoom = 20

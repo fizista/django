@@ -786,10 +786,7 @@ class GeoQuerySetTest(TestCase):
         u1 = qs.unionagg(field_name='point')
         u2 = qs.order_by('name').unionagg()
         tol = 0.00001
-        if oracle:
-            union = union2
-        else:
-            union = union1
+        union = union2 if oracle else union1
         self.assertEqual(True, union.equals_exact(u1, tol))
         self.assertEqual(True, union.equals_exact(u2, tol))
         qs = City.objects.filter(name='NotACity')

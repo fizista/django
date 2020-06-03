@@ -43,11 +43,10 @@ class BaseDatabaseCreation(object):
         settings_dict = self.connection.settings_dict.copy()
         settings_dict['NAME'] = None
         backend = load_backend(settings_dict['ENGINE'])
-        nodb_connection = backend.DatabaseWrapper(
-            settings_dict,
-            alias=NO_DB_ALIAS,
-            allow_thread_sharing=False)
-        return nodb_connection
+        return backend.DatabaseWrapper(
+                settings_dict,
+                alias=NO_DB_ALIAS,
+                allow_thread_sharing=False)
 
     @classmethod
     def _digest(cls, *args):

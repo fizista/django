@@ -97,7 +97,7 @@ def load_hashers(password_hashers=None):
             raise ImproperlyConfigured("hasher doesn't specify an "
                                        "algorithm name: %s" % backend)
         hashers.append(hasher)
-    HASHERS = dict((hasher.algorithm, hasher) for hasher in hashers)
+    HASHERS = {hasher.algorithm: hasher for hasher in hashers}
     PREFERRED_HASHER = hashers[0]
 
 

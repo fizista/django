@@ -132,10 +132,7 @@ class RenameModel(Operation):
             )
 
     def references_model(self, name, app_label=None):
-        return (
-            name.lower() == self.old_name.lower() or
-            name.lower() == self.new_name.lower()
-        )
+        return name.lower() in [self.old_name.lower(), self.new_name.lower()]
 
     def describe(self):
         return "Rename model %s to %s" % (self.old_name, self.new_name)
@@ -184,7 +181,7 @@ class AlterUniqueTogether(Operation):
     def __init__(self, name, unique_together):
         self.name = name
         unique_together = normalize_unique_together(unique_together)
-        self.unique_together = set(tuple(cons) for cons in unique_together)
+        self.unique_together = {tuple(cons) for cons in unique_together}
 
     def state_forwards(self, app_label, state):
         model_state = state.models[app_label, self.name.lower()]
@@ -220,7 +217,7 @@ class AlterIndexTogether(Operation):
 
     def __init__(self, name, index_together):
         self.name = name
-        self.index_together = set(tuple(cons) for cons in index_together)
+        self.index_together = {tuple(cons) for cons in index_together}
 
     def state_forwards(self, app_label, state):
         model_state = state.models[app_label, self.name.lower()]

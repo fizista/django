@@ -37,10 +37,10 @@ class PasswordResetTokenGenerator(object):
             return False
 
         # Check the timestamp is within limit
-        if (self._num_days(self._today()) - ts) > settings.PASSWORD_RESET_TIMEOUT_DAYS:
-            return False
-
-        return True
+        return (
+            self._num_days(self._today()) - ts
+            <= settings.PASSWORD_RESET_TIMEOUT_DAYS
+        )
 
     def _make_token_with_timestamp(self, user, timestamp):
         # timestamp is number of days since 2001-1-1.  Converted to

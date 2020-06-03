@@ -32,16 +32,16 @@ class GoogleMap(object):
                  extra_context={}):
 
         # The Google Maps API Key defined in the settings will be used
-        # if not passed in as a parameter.  The use of an API key is
-        # _required_.
-        if not key:
+            # if not passed in as a parameter.  The use of an API key is
+            # _required_.
+        if key:
+            self.key = key
+
+        else:
             try:
                 self.key = settings.GOOGLE_MAPS_API_KEY
             except AttributeError:
                 raise GoogleMapException('Google Maps API Key not found (try adding GOOGLE_MAPS_API_KEY to your settings).')
-        else:
-            self.key = key
-
         # Getting the Google Maps API version, defaults to using the latest ("2.x"),
         # this is not necessarily the most stable.
         if not version:
@@ -50,11 +50,11 @@ class GoogleMap(object):
             self.version = version
 
         # Can specify the API URL in the `api_url` keyword.
-        if not api_url:
-            self.api_url = getattr(settings, 'GOOGLE_MAPS_URL', GOOGLE_MAPS_URL) % self.version
-        else:
+        if api_url:
             self.api_url = api_url
 
+        else:
+            self.api_url = getattr(settings, 'GOOGLE_MAPS_URL', GOOGLE_MAPS_URL) % self.version
         # Setting the DOM id of the map, the load function, the JavaScript
         # template, and the KML URLs array.
         self.dom_id = dom_id
@@ -82,9 +82,10 @@ class GoogleMap(object):
         # level and a center coordinate are provided with polygons/polylines,
         # no automatic determination will occur.
         self.calc_zoom = False
-        if self.polygons or self.polylines or self.markers:
-            if center is None or zoom is None:
-                self.calc_zoom = True
+        if (self.polygons or self.polylines or self.markers) and (
+            center is None or zoom is None
+        ):
+            self.calc_zoom = True
 
         # Defaults for the zoom level and center coordinates if the zoom
         # is not automatically calculated.
@@ -153,7 +154,7 @@ class GoogleMap(object):
     @property
     def icons(self):
         "Returns a sequence of GIcon objects in this map."
-        return set(marker.icon for marker in self.markers if marker.icon)
+        return {marker.icon for marker in self.markers if marker.icon}
 
 
 class GoogleMapSet(GoogleMap):
@@ -181,11 +182,7 @@ class GoogleMapSet(GoogleMap):
         self.template = template
 
         # If a tuple/list passed in as first element of args, then assume
-        if isinstance(args[0], (tuple, list)):
-            self.maps = args[0]
-        else:
-            self.maps = args
-
+        self.maps = args[0] if isinstance(args[0], (tuple, list)) else args
         # Generating DOM ids for each of the maps in the set.
         self.dom_ids = ['map%d' % i for i in xrange(len(self.maps))]
 

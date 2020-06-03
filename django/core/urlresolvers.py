@@ -39,10 +39,7 @@ class ResolverMatch(object):
         self.args = args
         self.kwargs = kwargs
         self.app_name = app_name
-        if namespaces:
-            self.namespaces = [x for x in namespaces if x]
-        else:
-            self.namespaces = []
+        self.namespaces = [x for x in namespaces if x] if namespaces else []
         if not url_name:
             if not hasattr(func, '__name__'):
                 # An instance of a callable class
@@ -96,8 +93,11 @@ def get_callable(lookup_view, can_fail=False):
             mod = import_module(mod_name)
         except ImportError:
             parentmod, submod = get_mod_func(mod_name)
-            if (not can_fail and submod != '' and
-                    not module_has_submodule(import_module(parentmod), submod)):
+            if not (
+                can_fail
+                or submod == ''
+                or module_has_submodule(import_module(parentmod), submod)
+            ):
                 raise ViewDoesNotExist(
                     "Could not import %s. Parent module %s does not exist." %
                     (lookup_view, mod_name))
@@ -202,7 +202,7 @@ class RegexURLPattern(LocaleRegexProvider):
         """
         Adds the prefix string to a string-based callback.
         """
-        if not prefix or not hasattr(self, '_callback_str'):
+        if not (prefix and hasattr(self, '_callback_str')):
             return
         self._callback_str = prefix + '.' + self._callback_str
 
@@ -213,10 +213,7 @@ class RegexURLPattern(LocaleRegexProvider):
             # non-named groups. Otherwise, pass all non-named arguments as
             # positional arguments.
             kwargs = match.groupdict()
-            if kwargs:
-                args = ()
-            else:
-                args = match.groups()
+            args = () if kwargs else match.groups()
             # In both cases, pass any extra_kwargs as **kwargs.
             kwargs.update(self.default_args)
 
@@ -381,7 +378,7 @@ class RegexURLResolver(LocaleRegexProvider):
         if args and kwargs:
             raise ValueError("Don't mix *args and **kwargs in call to reverse()!")
         text_args = [force_text(v) for v in args]
-        text_kwargs = dict((k, force_text(v)) for (k, v) in kwargs.items())
+        text_kwargs = {k: force_text(v) for (k, v) in kwargs.items()}
 
         try:
             lookup_view = get_callable(lookup_view, True)
@@ -399,11 +396,7 @@ class RegexURLResolver(LocaleRegexProvider):
                 else:
                     if set(kwargs.keys()) | set(defaults.keys()) != set(params) | set(defaults.keys()) | set(prefix_args):
                         continue
-                    matches = True
-                    for k, v in defaults.items():
-                        if kwargs.get(k, v) != v:
-                            matches = False
-                            break
+                    matches = all(kwargs.get(k, v) == v for k, v in defaults.items())
                     if not matches:
                         continue
                     candidate_subs = text_kwargs
@@ -414,18 +407,14 @@ class RegexURLResolver(LocaleRegexProvider):
                 # arguments in order to return a properly encoded URL.
                 candidate_pat = prefix_norm.replace('%', '%%') + result
                 if re.search('^%s%s' % (prefix_norm, pattern), candidate_pat % candidate_subs, re.UNICODE):
-                    candidate_subs = dict((k, urlquote(v)) for (k, v) in candidate_subs.items())
+                    candidate_subs = {k: urlquote(v) for (k, v) in candidate_subs.items()}
                     return candidate_pat % candidate_subs
         # lookup_view can be URL label, or dotted path, or callable, Any of
         # these can be passed in at the top, but callables are not friendly in
         # error messages.
         m = getattr(lookup_view, '__module__', None)
         n = getattr(lookup_view, '__name__', None)
-        if m is not None and n is not None:
-            lookup_view_s = "%s.%s" % (m, n)
-        else:
-            lookup_view_s = lookup_view
-
+        lookup_view_s = lookup_view if m is None or n is None else "%s.%s" % (m, n)
         patterns = [pattern for (possibility, pattern, defaults) in possibilities]
         raise NoReverseMatch("Reverse for '%s' with arguments '%s' and keyword "
                 "arguments '%s' not found. %d pattern(s) tried: %s" %
@@ -500,7 +489,7 @@ def reverse(viewname, urlconf=None, args=None, kwargs=None, prefix=None, current
             try:
                 extra, resolver = resolver.namespace_dict[ns]
                 resolved_path.append(ns)
-                ns_pattern = ns_pattern + extra
+                ns_pattern += extra
             except KeyError as key:
                 if resolved_path:
                     raise NoReverseMatch(

@@ -158,10 +158,7 @@ def call_command(name, *args, **options):
     # of defaults (see #10080 for details).
     defaults = {}
     for opt in klass.option_list:
-        if opt.default is NO_DEFAULT:
-            defaults[opt.dest] = None
-        else:
-            defaults[opt.dest] = opt.default
+        defaults[opt.dest] = None if opt.default is NO_DEFAULT else opt.default
     defaults.update(options)
 
     return klass.execute(*args, **defaults)
@@ -248,10 +245,7 @@ class ManagementUtility(object):
             ]
             commands_dict = collections.defaultdict(lambda: [])
             for name, app in six.iteritems(get_commands()):
-                if app == 'django.core':
-                    app = 'django'
-                else:
-                    app = app.rpartition('.')[-1]
+                app = 'django' if app == 'django.core' else app.rpartition('.')[-1]
                 commands_dict[app].append(name)
             style = color_style()
             for app in sorted(commands_dict.keys()):

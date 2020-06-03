@@ -476,11 +476,10 @@ def commit_on_success(using=None):
 
     def exiting(exc_type, using):
         try:
-            if exc_type is not None:
-                if is_dirty(using=using):
+            if is_dirty(using=using):
+                if exc_type is not None:
                     rollback(using=using)
-            else:
-                if is_dirty(using=using):
+                else:
                     try:
                         commit(using=using)
                     except:

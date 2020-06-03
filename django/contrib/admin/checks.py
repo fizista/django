@@ -22,8 +22,7 @@ def check_admin_app(**kwargs):
 class BaseModelAdminChecks(object):
 
     def check(self, cls, model, **kwargs):
-        errors = []
-        errors.extend(self._check_raw_id_fields(cls, model))
+        errors = list(self._check_raw_id_fields(cls, model))
         errors.extend(self._check_fields(cls, model))
         errors.extend(self._check_fieldsets(cls, model))
         errors.extend(self._check_exclude(cls, model))
@@ -315,7 +314,9 @@ class BaseModelAdminChecks(object):
 
     def _check_view_on_site_url(self, cls, model):
         if hasattr(cls, 'view_on_site'):
-            if not callable(cls.view_on_site) and not isinstance(cls.view_on_site, bool):
+            if not (
+                callable(cls.view_on_site) or isinstance(cls.view_on_site, bool)
+            ):
                 return [
                     checks.Error(
                         '"view_on_site" is not a callable or a boolean value.',
@@ -459,11 +460,11 @@ class BaseModelAdminChecks(object):
             ]))
 
     def _check_readonly_fields_item(self, cls, model, field_name, label):
-        if callable(field_name):
-            return []
-        elif hasattr(cls, field_name):
-            return []
-        elif hasattr(model, field_name):
+        if (
+            callable(field_name)
+            or hasattr(cls, field_name)
+            or hasattr(model, field_name)
+        ):
             return []
         else:
             try:
@@ -566,9 +567,7 @@ class ModelAdminChecks(BaseModelAdminChecks):
             ]))
 
     def _check_list_display_item(self, cls, model, item, label):
-        if callable(item):
-            return []
-        elif hasattr(cls, item):
+        if callable(item) or hasattr(cls, item):
             return []
         elif hasattr(model, item):
             # getattr(model, item) could be an X_RelatedObjectsDescriptor
@@ -880,12 +879,10 @@ class InlineModelAdminChecks(BaseModelAdminChecks):
     def _check_max_num(self, cls):
         """ Check that max_num is an integer. """
 
-        if cls.max_num is None:
+        if cls.max_num is None or isinstance(cls.max_num, int):
             return []
-        elif not isinstance(cls.max_num, int):
-            return must_be('an integer', option='max_num', obj=cls, id='admin.E204')
         else:
-            return []
+            return must_be('an integer', option='max_num', obj=cls, id='admin.E204')
 
     def _check_formset(self, cls):
         """ Check formset is a subclass of BaseModelFormSet. """

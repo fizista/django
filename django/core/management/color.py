@@ -18,9 +18,7 @@ def supports_color():
                                                   'ANSICON' in os.environ)
     # isatty is not always implemented, #6223.
     is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
-    if not supported_platform or not is_a_tty:
-        return False
-    return True
+    return bool(supported_platform and is_a_tty)
 
 
 def color_style():

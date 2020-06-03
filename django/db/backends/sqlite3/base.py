@@ -186,21 +186,19 @@ class DatabaseOperations(BaseDatabaseOperations):
 
     def datetime_extract_sql(self, lookup_type, field_name, tzname):
         # Same comment as in date_extract_sql.
-        if settings.USE_TZ:
-            if pytz is None:
-                from django.core.exceptions import ImproperlyConfigured
-                raise ImproperlyConfigured("This query requires pytz, "
-                                           "but it isn't installed.")
+        if settings.USE_TZ and pytz is None:
+            from django.core.exceptions import ImproperlyConfigured
+            raise ImproperlyConfigured("This query requires pytz, "
+                                       "but it isn't installed.")
         return "django_datetime_extract('%s', %s, %%s)" % (
             lookup_type.lower(), field_name), [tzname]
 
     def datetime_trunc_sql(self, lookup_type, field_name, tzname):
         # Same comment as in date_trunc_sql.
-        if settings.USE_TZ:
-            if pytz is None:
-                from django.core.exceptions import ImproperlyConfigured
-                raise ImproperlyConfigured("This query requires pytz, "
-                                           "but it isn't installed.")
+        if settings.USE_TZ and pytz is None:
+            from django.core.exceptions import ImproperlyConfigured
+            raise ImproperlyConfigured("This query requires pytz, "
+                                       "but it isn't installed.")
         return "django_datetime_trunc('%s', %s, %%s)" % (
             lookup_type.lower(), field_name), [tzname]
 
@@ -297,10 +295,11 @@ class DatabaseOperations(BaseDatabaseOperations):
         return value
 
     def bulk_insert_sql(self, fields, num_values):
-        res = []
-        res.append("SELECT %s" % ", ".join(
-            "%%s AS %s" % self.quote_name(f.column) for f in fields
-        ))
+        res = [
+            'SELECT %s'
+            % ', '.join('%%s AS %s' % self.quote_name(f.column) for f in fields)
+        ]
+
         res.extend(["UNION ALL SELECT %s" % ", ".join(["%s"] * len(fields))] * (num_values - 1))
         return " ".join(res)
 
@@ -567,10 +566,7 @@ def _sqlite_format_dtdelta(dt, conn, days, secs, usecs):
     try:
         dt = backend_utils.typecast_timestamp(dt)
         delta = datetime.timedelta(int(days), int(secs), int(usecs))
-        if conn.strip() == '+':
-            dt = dt + delta
-        else:
-            dt = dt - delta
+        dt = dt + delta if conn.strip() == '+' else dt - delta
     except (ValueError, TypeError):
         return None
     # typecast_timestamp returns a date or a datetime without timezone.

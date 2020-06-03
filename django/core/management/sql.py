@@ -29,7 +29,12 @@ def sql_create(app_config, style, connection):
     app_models = app_config.get_models(include_auto_created=True)
     final_output = []
     tables = connection.introspection.table_names()
-    known_models = set(model for model in connection.introspection.installed_models(tables) if model not in app_models)
+    known_models = {
+        model
+        for model in connection.introspection.installed_models(tables)
+        if model not in app_models
+    }
+
     pending_references = {}
 
     for model in router.get_migratable_models(app_config, connection.alias, include_auto_created=True):
@@ -68,11 +73,7 @@ def sql_delete(app_config, style, connection):
         cursor = None
 
     # Figure out which tables already exist
-    if cursor:
-        table_names = connection.introspection.table_names(cursor)
-    else:
-        table_names = []
-
+    table_names = connection.introspection.table_names(cursor) if cursor else []
     output = []
 
     # Output DROP TABLE statements for standard application tables.
@@ -115,8 +116,7 @@ def sql_flush(style, connection, only_django=False, reset_sequences=True, allow_
     else:
         tables = connection.introspection.table_names()
     seqs = connection.introspection.sequence_list() if reset_sequences else ()
-    statements = connection.ops.sql_flush(style, tables, seqs, allow_cascade)
-    return statements
+    return connection.ops.sql_flush(style, tables, seqs, allow_cascade)
 
 
 def sql_custom(app_config, style, connection):

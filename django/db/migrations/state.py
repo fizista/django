@@ -26,15 +26,13 @@ class ProjectState(object):
 
     def clone(self):
         "Returns an exact copy of this ProjectState"
-        return ProjectState(
-            models=dict((k, v.clone()) for k, v in self.models.items())
-        )
+        return ProjectState(models={k: v.clone() for k, v in self.models.items()})
 
     def render(self):
         "Turns the project state into actual models in a new Apps"
         if self.apps is None:
             # Populate the app registry with a stub for each application.
-            app_labels = set(model_state.app_label for model_state in self.models.values())
+            app_labels = {model_state.app_label for model_state in self.models.values()}
             self.apps = Apps([AppConfigStub(label) for label in sorted(app_labels)])
             # We keep trying to render the models in a loop, ignoring invalid
             # base errors, until the size of the unrendered models doesn't

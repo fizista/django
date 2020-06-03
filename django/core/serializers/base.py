@@ -62,9 +62,11 @@ class Serializer(object):
                         if self.selected_fields is None or field.attname[:-3] in self.selected_fields:
                             self.handle_fk_field(obj, field)
             for field in concrete_model._meta.many_to_many:
-                if field.serialize:
-                    if self.selected_fields is None or field.attname in self.selected_fields:
-                        self.handle_m2m_field(obj, field)
+                if field.serialize and (
+                    self.selected_fields is None
+                    or field.attname in self.selected_fields
+                ):
+                    self.handle_m2m_field(obj, field)
             self.end_object(obj)
             if self.first:
                 self.first = False

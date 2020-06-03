@@ -164,10 +164,7 @@ class DatabaseCache(BaseDatabaseCache):
         table = connections[db].ops.quote_name(self._table)
         cursor = connections[db].cursor()
 
-        if settings.USE_TZ:
-            now = datetime.utcnow()
-        else:
-            now = datetime.now()
+        now = datetime.utcnow() if settings.USE_TZ else datetime.now()
         now = now.replace(microsecond=0)
         cursor.execute("SELECT cache_key FROM %s "
                        "WHERE cache_key = %%s and expires > %%s" % table,

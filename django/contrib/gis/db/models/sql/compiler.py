@@ -32,10 +32,7 @@ class GeoSQLCompiler(compiler.SQLCompiler):
                   for alias, col in six.iteritems(self.query.extra_select)]
         params = []
         aliases = set(self.query.extra_select.keys())
-        if with_aliases:
-            col_aliases = aliases.copy()
-        else:
-            col_aliases = set()
+        col_aliases = aliases.copy() if with_aliases else set()
         if self.query.select:
             only_load = self.deferred_to_columns()
             # This loop customized for GeoQuery.
@@ -166,9 +163,10 @@ class GeoSQLCompiler(compiler.SQLCompiler):
         # determining the correct starting row index -- needed for
         # doing pagination with Oracle.
         rn_offset = 0
-        if self.connection.ops.oracle:
-            if self.query.high_mark is not None or self.query.low_mark:
-                rn_offset = 1
+        if self.connection.ops.oracle and (
+            self.query.high_mark is not None or self.query.low_mark
+        ):
+            rn_offset = 1
         index_start = rn_offset + len(aliases)
 
         # Converting any extra selection values (e.g., geometries and
@@ -190,7 +188,7 @@ class GeoSQLCompiler(compiler.SQLCompiler):
     def get_extra_select_format(self, alias):
         sel_fmt = '%s'
         if hasattr(self.query, 'custom_select') and alias in self.query.custom_select:
-            sel_fmt = sel_fmt % self.query.custom_select[alias]
+            sel_fmt %= self.query.custom_select[alias]
         return sel_fmt
 
     def get_field_select(self, field, alias=None, column=None):

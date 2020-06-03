@@ -318,9 +318,9 @@ class TestUtilsHashPass(SimpleTestCase):
                          "library attribute", str(e.exception))
 
     def test_load_library_importerror(self):
-        PlainHasher = type(str('PlainHasher'), (BasePasswordHasher,),
-                           {'algorithm': 'plain', 'library': 'plain'})
         # Python 3.3 adds quotes around module name
         with six.assertRaisesRegex(self, ValueError,
-                "Couldn't load 'PlainHasher' algorithm library: No module named '?plain'?"):
+                    "Couldn't load 'PlainHasher' algorithm library: No module named '?plain'?"):
+            PlainHasher = type(str('PlainHasher'), (BasePasswordHasher,),
+                               {'algorithm': 'plain', 'library': 'plain'})
             PlainHasher()._load_library()

@@ -315,10 +315,10 @@ WHEN (new.%(col_name)s IS NULL)
 
     def quote_name(self, name):
         # SQL92 requires delimited (quoted) names to be case-sensitive.  When
-        # not quoted, Oracle has case-insensitive behavior for identifiers, but
-        # always defaults to uppercase.
-        # We simplify things by making Oracle identifiers always uppercase.
-        if not name.startswith('"') and not name.endswith('"'):
+            # not quoted, Oracle has case-insensitive behavior for identifiers, but
+            # always defaults to uppercase.
+            # We simplify things by making Oracle identifiers always uppercase.
+        if not (name.startswith('"') or name.endswith('"')):
             name = '"%s"' % backend_utils.truncate_name(name.upper(),
                                                self.max_name_length())
         # Oracle puts the query text into a (query % args) construct, so % signs
@@ -344,10 +344,7 @@ WHEN (new.%(col_name)s IS NULL)
         raise NotImplementedError("Regexes are not supported in Oracle before version 10g.")
 
     def regex_lookup_10(self, lookup_type):
-        if lookup_type == 'regex':
-            match_option = "'c'"
-        else:
-            match_option = "'i'"
+        match_option = "'c'" if lookup_type == 'regex' else "'i'"
         return 'REGEXP_LIKE(%%s, %%s, %s)' % match_option
 
     def regex_lookup(self, lookup_type):
@@ -795,7 +792,7 @@ class FormatStylePlaceholderCursor(object):
 
     def _format_params(self, params):
         try:
-            return dict((k, OracleParam(v, self, True)) for k, v in params.items())
+            return {k: OracleParam(v, self, True) for k, v in params.items()}
         except AttributeError:
             return tuple(OracleParam(p, self, True) for p in params)
 
@@ -820,7 +817,7 @@ class FormatStylePlaceholderCursor(object):
     def _param_generator(self, params):
         # Try dict handling; if that fails, treat as sequence
         if hasattr(params, 'items'):
-            return dict((k, v.force_bytes) for k, v in params.items())
+            return {k: v.force_bytes for k, v in params.items()}
         else:
             return [p.force_bytes for p in params]
 
@@ -836,7 +833,7 @@ class FormatStylePlaceholderCursor(object):
             query = convert_unicode(query, self.charset)
         elif hasattr(params, 'keys'):
             # Handle params as dict
-            args = dict((k, ":%s" % k) for k in params.keys())
+            args = {k: ":%s" % k for k in params.keys()}
             query = convert_unicode(query % args, self.charset)
         else:
             # Handle params as sequence

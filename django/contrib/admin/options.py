@@ -251,7 +251,7 @@ class BaseModelAdmin(six.with_metaclass(RenameBaseModelAdminMethods)):
             })
             kwargs['empty_label'] = _('None') if db_field.blank else None
 
-        if not 'queryset' in kwargs:
+        if 'queryset' not in kwargs:
             queryset = self.get_field_queryset(db, db_field, request)
             if queryset is not None:
                 kwargs['queryset'] = queryset
@@ -275,7 +275,7 @@ class BaseModelAdmin(six.with_metaclass(RenameBaseModelAdminMethods)):
         elif db_field.name in (list(self.filter_vertical) + list(self.filter_horizontal)):
             kwargs['widget'] = widgets.FilteredSelectMultiple(db_field.verbose_name, (db_field.name in self.filter_vertical))
 
-        if not 'queryset' in kwargs:
+        if 'queryset' not in kwargs:
             queryset = self.get_field_queryset(db, db_field, request)
             if queryset is not None:
                 kwargs['queryset'] = queryset
@@ -288,7 +288,7 @@ class BaseModelAdmin(six.with_metaclass(RenameBaseModelAdminMethods)):
 
         if callable(self.view_on_site):
             return self.view_on_site(obj)
-        elif self.view_on_site and hasattr(obj, 'get_absolute_url'):
+        elif hasattr(obj, 'get_absolute_url'):
             # use the ContentType lookup if view_on_site is True
             return reverse('admin:view_on_site', kwargs={
                 'content_type_id': ContentType.objects.get_for_model(obj).pk,
@@ -597,10 +597,7 @@ class ModelAdmin(BaseModelAdmin):
             fields = kwargs.pop('fields')
         else:
             fields = flatten_fieldsets(self.get_fieldsets(request, obj))
-        if self.exclude is None:
-            exclude = []
-        else:
-            exclude = list(self.exclude)
+        exclude = [] if self.exclude is None else list(self.exclude)
         exclude.extend(self.get_readonly_fields(request, obj))
         if self.exclude is None and hasattr(self.form, '_meta') and self.form._meta.exclude:
             # Take the custom ModelForm's Meta.exclude into account only if the
@@ -1224,7 +1221,7 @@ class ModelAdmin(BaseModelAdmin):
             # perform an action on it, so bail. Except we want to perform
             # the action explicitly on all objects.
             selected = request.POST.getlist(helpers.ACTION_CHECKBOX_NAME)
-            if not selected and not select_across:
+            if not (selected or select_across):
                 # Reminder that something needs to be selected or nothing will happen
                 msg = _("Items must be selected in order to perform "
                         "actions on them. No items have been changed.")
@@ -1496,15 +1493,18 @@ class ModelAdmin(BaseModelAdmin):
                 action_failed = True
 
         # Actions with confirmation
-        if (actions and request.method == 'POST' and
-                helpers.ACTION_CHECKBOX_NAME in request.POST and
-                'index' not in request.POST and '_save' not in request.POST):
-            if selected:
-                response = self.response_action(request, queryset=cl.get_queryset(request))
-                if response:
-                    return response
-                else:
-                    action_failed = True
+        if (
+            actions
+            and request.method == 'POST'
+            and helpers.ACTION_CHECKBOX_NAME in request.POST
+            and 'index' not in request.POST
+            and '_save' not in request.POST
+        ) and selected:
+            response = self.response_action(request, queryset=cl.get_queryset(request))
+            if response:
+                return response
+            else:
+                action_failed = True
 
         # If we're allowing changelist editing, we need to construct a formset
         # for the changelist given all the fields to be edited. Then we'll
@@ -1547,11 +1547,7 @@ class ModelAdmin(BaseModelAdmin):
             formset = cl.formset = FormSet(queryset=cl.result_list)
 
         # Build the list of media to be used by the formset.
-        if formset:
-            media = self.media + formset.media
-        else:
-            media = self.media
-
+        media = self.media + formset.media if formset else self.media
         # Build the action form and populate it with available actions.
         if actions:
             action_form = self.action_form(auto_id=None)
@@ -1796,26 +1792,27 @@ class InlineModelAdmin(BaseModelAdmin):
                 templates it's not rendered using the field information, but
                 just using a generic "deletion_field" of the InlineModelAdmin.
                 """
-                if self.cleaned_data.get(DELETION_FIELD_NAME, False):
-                    using = router.db_for_write(self._meta.model)
-                    collector = NestedObjects(using=using)
-                    collector.collect([self.instance])
-                    if collector.protected:
-                        objs = []
-                        for p in collector.protected:
-                            objs.append(
-                                # Translators: Model verbose name and instance representation, suitable to be an item in a list
-                                _('%(class_name)s %(instance)s') % {
-                                    'class_name': p._meta.verbose_name,
-                                    'instance': p}
-                            )
-                        params = {'class_name': self._meta.model._meta.verbose_name,
-                                  'instance': self.instance,
-                                  'related_objects': get_text_list(objs, _('and'))}
-                        msg = _("Deleting %(class_name)s %(instance)s would require "
-                                "deleting the following protected related objects: "
-                                "%(related_objects)s")
-                        raise ValidationError(msg, code='deleting_protected', params=params)
+                if not self.cleaned_data.get(DELETION_FIELD_NAME, False):
+                    return
+                using = router.db_for_write(self._meta.model)
+                collector = NestedObjects(using=using)
+                collector.collect([self.instance])
+                if collector.protected:
+                    objs = []
+                    for p in collector.protected:
+                        objs.append(
+                            # Translators: Model verbose name and instance representation, suitable to be an item in a list
+                            _('%(class_name)s %(instance)s') % {
+                                'class_name': p._meta.verbose_name,
+                                'instance': p}
+                        )
+                    params = {'class_name': self._meta.model._meta.verbose_name,
+                              'instance': self.instance,
+                              'related_objects': get_text_list(objs, _('and'))}
+                    msg = _("Deleting %(class_name)s %(instance)s would require "
+                            "deleting the following protected related objects: "
+                            "%(related_objects)s")
+                    raise ValidationError(msg, code='deleting_protected', params=params)
 
             def is_valid(self):
                 result = super(DeleteProtectedModelForm, self).is_valid()

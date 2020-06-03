@@ -227,7 +227,7 @@ class SpatiaLiteOperations(DatabaseOperations, BaseSpatialOperations):
         Transform() and GeomFromText() function call(s).
         """
         def transform_value(value, srid):
-            return not (value is None or value.srid == srid)
+            return value is not None and value.srid != srid
         if hasattr(value, 'expression'):
             if transform_value(value, f.srid):
                 placeholder = '%s(%%s, %s)' % (self.transform, f.srid)

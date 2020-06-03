@@ -41,8 +41,11 @@ class FilteredSelectMultiple(forms.SelectMultiple):
         attrs['class'] = 'selectfilter'
         if self.is_stacked:
             attrs['class'] += 'stacked'
-        output = [super(FilteredSelectMultiple, self).render(name, value, attrs, choices)]
-        output.append('<script type="text/javascript">addEvent(window, "load", function(e) {')
+        output = [
+            super(FilteredSelectMultiple, self).render(name, value, attrs, choices),
+            '<script type="text/javascript">addEvent(window, "load", function(e) {',
+        ]
+
         # TODO: "id_" is hard-coded here. This should instead use the correct
         # API to determine the ID dynamically.
         output.append('SelectFilter.init("id_%s", "%s", %s, "%s"); });</script>\n'
@@ -208,10 +211,7 @@ class ManyToManyRawIdWidget(ForeignKeyRawIdWidget):
         if self.rel.to in self.admin_site._registry:
             # The related object is registered with the same AdminSite
             attrs['class'] = 'vManyToManyRawIdAdminField'
-        if value:
-            value = ','.join(force_text(v) for v in value)
-        else:
-            value = ''
+        value = ','.join(force_text(v) for v in value) if value else ''
         return super(ManyToManyRawIdWidget, self).render(name, value, attrs)
 
     def url_parameters(self):

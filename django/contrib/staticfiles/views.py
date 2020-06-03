@@ -27,7 +27,7 @@ def serve(request, path, insecure=False, **kwargs):
 
     It uses the django.views.static.serve() view to serve the found files.
     """
-    if not settings.DEBUG and not insecure:
+    if not (settings.DEBUG or insecure):
         raise Http404
     normalized_path = posixpath.normpath(unquote(path)).lstrip('/')
     absolute_path = finders.find(normalized_path)

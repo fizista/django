@@ -13,14 +13,10 @@ from django.utils._os import upath
 
 class MockUser(object):
     def has_module_perms(self, perm):
-        if perm == 'mockapp':
-            return True
-        return False
+        return perm == 'mockapp'
 
     def has_perm(self, perm):
-        if perm == 'mockapp.someperm':
-            return True
-        return False
+        return perm == 'mockapp.someperm'
 
 
 class PermWrapperTests(TestCase):

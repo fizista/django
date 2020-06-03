@@ -61,10 +61,7 @@ def permission_required(perm, login_url=None, raise_exception=False):
     is raised.
     """
     def check_perms(user):
-        if not isinstance(perm, (list, tuple)):
-            perms = (perm, )
-        else:
-            perms = perm
+        perms = (perm, ) if not isinstance(perm, (list, tuple)) else perm
         # First check if the user has the permission (even anon users)
         if user.has_perms(perms):
             return True

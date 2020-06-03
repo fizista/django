@@ -52,9 +52,12 @@ class Command(NoArgsCommand):
         yield 'from %s import models' % self.db_module
         known_models = []
         for table_name in connection.introspection.table_names(cursor):
-            if table_name_filter is not None and callable(table_name_filter):
-                if not table_name_filter(table_name):
-                    continue
+            if (
+                table_name_filter is not None
+                and callable(table_name_filter)
+                and not table_name_filter(table_name)
+            ):
+                continue
             yield ''
             yield ''
             yield 'class %s(models.Model):' % table2model(table_name)
@@ -112,13 +115,13 @@ class Command(NoArgsCommand):
                         comment_notes.append('AutoField?')
 
                 # Add 'null' and 'blank', if the 'null_ok' flag was present in the
-                # table description.
+                            # table description.
                 if row[6]:  # If it's NULL...
                     if field_type == 'BooleanField(':
                         field_type = 'NullBooleanField('
                     else:
                         extra_params['blank'] = True
-                        if not field_type in ('TextField(', 'CharField('):
+                        if field_type not in ('TextField(', 'CharField('):
                             extra_params['null'] = True
 
                 field_desc = '%s = %s%s' % (
@@ -137,8 +140,7 @@ class Command(NoArgsCommand):
                 if comment_notes:
                     field_desc += '  # ' + ' '.join(comment_notes)
                 yield '    %s' % field_desc
-            for meta_line in self.get_meta(table_name):
-                yield meta_line
+            yield from self.get_meta(table_name)
 
     def normalize_col_name(self, col_name, used_column_names, is_relation):
         """

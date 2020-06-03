@@ -77,17 +77,9 @@ class DistanceTest(TestCase):
 
         # Now performing the `dwithin` queries on a geodetic coordinate system.
         for dist in au_dists:
-            if isinstance(dist, D) and not oracle:
-                type_error = True
-            else:
-                type_error = False
-
+            type_error = True if isinstance(dist, D) and not oracle else False
             if isinstance(dist, tuple):
-                if oracle:
-                    dist = dist[1]
-                else:
-                    dist = dist[0]
-
+                dist = dist[1] if oracle else dist[0]
             # Creating the query set.
             qs = AustraliaCity.objects.order_by('name')
             if type_error:
@@ -346,9 +338,6 @@ class DistanceTest(TestCase):
         """
         Test the `length` GeoQuerySet method.
         """
-        # Reference query (should use `length_spheroid`).
-        # SELECT ST_length_spheroid(ST_GeomFromText('<wkt>', 4326) 'SPHEROID["WGS 84",6378137,298.257223563, AUTHORITY["EPSG","7030"]]');
-        len_m1 = 473504.769553813
         len_m2 = 4617.668
 
         if spatialite:
@@ -357,6 +346,9 @@ class DistanceTest(TestCase):
         else:
             qs = Interstate.objects.length()
             tol = 2 if oracle else 3
+            # Reference query (should use `length_spheroid`).
+            # SELECT ST_length_spheroid(ST_GeomFromText('<wkt>', 4326) 'SPHEROID["WGS 84",6378137,298.257223563, AUTHORITY["EPSG","7030"]]');
+            len_m1 = 473504.769553813
             self.assertAlmostEqual(len_m1, qs[0].length.m, tol)
 
         # Now doing length on a projected coordinate system.

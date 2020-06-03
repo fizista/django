@@ -88,7 +88,7 @@ class ServerHandler(simple_server.ServerHandler, object):
     # This can be removed when support for Python <= 2.7.3 is deprecated.
     def finish_response(self):
         try:
-            if not self.result_is_file() or not self.sendfile():
+            if not (self.result_is_file() and self.sendfile()):
                 for data in self.result:
                     self.write(data)
                 self.finish_content()

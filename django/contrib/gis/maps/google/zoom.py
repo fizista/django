@@ -39,7 +39,7 @@ class GoogleZoom(object):
 
         # Incrementing through the zoom levels and populating the parameter arrays.
         z = tilesize  # The number of pixels per zoom level.
-        for i in xrange(num_zoom):
+        for _ in xrange(num_zoom):
             # Getting the degrees and radians per pixel, and the 1/2 the number of
             # for every zoom level.
             self._degpp.append(z / 360.)  # degrees per pixel
@@ -55,10 +55,7 @@ class GoogleZoom(object):
 
     def get_lon_lat(self, lonlat):
         "Unpacks longitude, latitude from GEOS Points and 2-tuples."
-        if isinstance(lonlat, Point):
-            lon, lat = lonlat.coords
-        else:
-            lon, lat = lonlat
+        lon, lat = lonlat.coords if isinstance(lonlat, Point) else lonlat
         return lon, lat
 
     def lonlat_to_pixel(self, lonlat, zoom):

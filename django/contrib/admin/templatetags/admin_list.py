@@ -49,15 +49,12 @@ def pagination(cl):
     """
     paginator, page_num = cl.paginator, cl.page_num
 
-    pagination_required = (not cl.show_all or not cl.can_show_all) and cl.multi_page
+    pagination_required = not (cl.show_all and cl.can_show_all) and cl.multi_page
     if not pagination_required:
         page_range = []
     else:
-        ON_EACH_SIDE = 3
-        ON_ENDS = 2
-
         # If there are 10 or fewer pages, display links to every page.
-        # Otherwise, do some fancy
+                # Otherwise, do some fancy
         if paginator.num_pages <= 10:
             page_range = range(paginator.num_pages)
         else:
@@ -65,12 +62,15 @@ def pagination(cl):
             # links at either end of the list of pages, and there are always
             # ON_EACH_SIDE links at either end of the "current page" link.
             page_range = []
+            ON_EACH_SIDE = 3
+            ON_ENDS = 2
+
             if page_num > (ON_EACH_SIDE + ON_ENDS):
-                page_range.extend(range(0, ON_ENDS))
+                page_range.extend(range(ON_ENDS))
                 page_range.append(DOT)
                 page_range.extend(range(page_num - ON_EACH_SIDE, page_num + 1))
             else:
-                page_range.extend(range(0, page_num + 1))
+                page_range.extend(range(page_num + 1))
             if page_num < (paginator.num_pages - ON_EACH_SIDE - ON_ENDS - 1):
                 page_range.extend(range(page_num + 1, page_num + ON_EACH_SIDE + 1))
                 page_range.append(DOT)
@@ -148,14 +148,13 @@ def result_headers(cl):
                 # We want clicking on this header to bring the ordering to the
                 # front
                 o_list_primary.insert(0, param)
-                o_list_toggle.append(param)
-                # o_list_remove - omit
+                            # o_list_remove - omit
             else:
                 param = make_qs_param(ot, j)
                 o_list_primary.append(param)
-                o_list_toggle.append(param)
                 o_list_remove.append(param)
 
+            o_list_toggle.append(param)
         if i not in ordering_field_columns:
             o_list_primary.insert(0, make_qs_param(new_order_type, i))
 
@@ -321,77 +320,81 @@ def date_hierarchy(cl):
     """
     Displays the date hierarchy for date drill-down functionality.
     """
-    if cl.date_hierarchy:
-        field_name = cl.date_hierarchy
-        field = cl.opts.get_field_by_name(field_name)[0]
-        dates_or_datetimes = 'datetimes' if isinstance(field, models.DateTimeField) else 'dates'
-        year_field = '%s__year' % field_name
-        month_field = '%s__month' % field_name
-        day_field = '%s__day' % field_name
-        field_generic = '%s__' % field_name
-        year_lookup = cl.params.get(year_field)
-        month_lookup = cl.params.get(month_field)
-        day_lookup = cl.params.get(day_field)
+    if not cl.date_hierarchy:
+        return
+    field_name = cl.date_hierarchy
+    field = cl.opts.get_field_by_name(field_name)[0]
+    dates_or_datetimes = 'datetimes' if isinstance(field, models.DateTimeField) else 'dates'
+    year_field = '%s__year' % field_name
+    month_field = '%s__month' % field_name
+    day_field = '%s__day' % field_name
+    field_generic = '%s__' % field_name
+    year_lookup = cl.params.get(year_field)
+    month_lookup = cl.params.get(month_field)
+    day_lookup = cl.params.get(day_field)
 
-        link = lambda filters: cl.get_query_string(filters, [field_generic])
+    link = lambda filters: cl.get_query_string(filters, [field_generic])
 
-        if not (year_lookup or month_lookup or day_lookup):
-            # select appropriate start level
-            date_range = cl.queryset.aggregate(first=models.Min(field_name),
-                                               last=models.Max(field_name))
-            if date_range['first'] and date_range['last']:
-                if date_range['first'].year == date_range['last'].year:
-                    year_lookup = date_range['first'].year
-                    if date_range['first'].month == date_range['last'].month:
-                        month_lookup = date_range['first'].month
+    if not (year_lookup or month_lookup or day_lookup):
+        # select appropriate start level
+        date_range = cl.queryset.aggregate(first=models.Min(field_name),
+                                           last=models.Max(field_name))
+        if (
+            date_range['first']
+            and date_range['last']
+            and date_range['first'].year == date_range['last'].year
+        ):
+            year_lookup = date_range['first'].year
+            if date_range['first'].month == date_range['last'].month:
+                month_lookup = date_range['first'].month
 
-        if year_lookup and month_lookup and day_lookup:
-            day = datetime.date(int(year_lookup), int(month_lookup), int(day_lookup))
-            return {
-                'show': True,
-                'back': {
-                    'link': link({year_field: year_lookup, month_field: month_lookup}),
-                    'title': capfirst(formats.date_format(day, 'YEAR_MONTH_FORMAT'))
-                },
-                'choices': [{'title': capfirst(formats.date_format(day, 'MONTH_DAY_FORMAT'))}]
-            }
-        elif year_lookup and month_lookup:
-            days = cl.queryset.filter(**{year_field: year_lookup, month_field: month_lookup})
-            days = getattr(days, dates_or_datetimes)(field_name, 'day')
-            return {
-                'show': True,
-                'back': {
-                    'link': link({year_field: year_lookup}),
-                    'title': str(year_lookup)
-                },
-                'choices': [{
-                    'link': link({year_field: year_lookup, month_field: month_lookup, day_field: day.day}),
-                    'title': capfirst(formats.date_format(day, 'MONTH_DAY_FORMAT'))
-                } for day in days]
-            }
-        elif year_lookup:
-            months = cl.queryset.filter(**{year_field: year_lookup})
-            months = getattr(months, dates_or_datetimes)(field_name, 'month')
-            return {
-                'show': True,
-                'back': {
-                    'link': link({}),
-                    'title': _('All dates')
-                },
-                'choices': [{
-                    'link': link({year_field: year_lookup, month_field: month.month}),
-                    'title': capfirst(formats.date_format(month, 'YEAR_MONTH_FORMAT'))
-                } for month in months]
-            }
-        else:
-            years = getattr(cl.queryset, dates_or_datetimes)(field_name, 'year')
-            return {
-                'show': True,
-                'choices': [{
-                    'link': link({year_field: str(year.year)}),
-                    'title': str(year.year),
-                } for year in years]
-            }
+    if year_lookup and month_lookup and day_lookup:
+        day = datetime.date(int(year_lookup), int(month_lookup), int(day_lookup))
+        return {
+            'show': True,
+            'back': {
+                'link': link({year_field: year_lookup, month_field: month_lookup}),
+                'title': capfirst(formats.date_format(day, 'YEAR_MONTH_FORMAT'))
+            },
+            'choices': [{'title': capfirst(formats.date_format(day, 'MONTH_DAY_FORMAT'))}]
+        }
+    elif year_lookup and month_lookup:
+        days = cl.queryset.filter(**{year_field: year_lookup, month_field: month_lookup})
+        days = getattr(days, dates_or_datetimes)(field_name, 'day')
+        return {
+            'show': True,
+            'back': {
+                'link': link({year_field: year_lookup}),
+                'title': str(year_lookup)
+            },
+            'choices': [{
+                'link': link({year_field: year_lookup, month_field: month_lookup, day_field: day.day}),
+                'title': capfirst(formats.date_format(day, 'MONTH_DAY_FORMAT'))
+            } for day in days]
+        }
+    elif year_lookup:
+        months = cl.queryset.filter(**{year_field: year_lookup})
+        months = getattr(months, dates_or_datetimes)(field_name, 'month')
+        return {
+            'show': True,
+            'back': {
+                'link': link({}),
+                'title': _('All dates')
+            },
+            'choices': [{
+                'link': link({year_field: year_lookup, month_field: month.month}),
+                'title': capfirst(formats.date_format(month, 'YEAR_MONTH_FORMAT'))
+            } for month in months]
+        }
+    else:
+        years = getattr(cl.queryset, dates_or_datetimes)(field_name, 'year')
+        return {
+            'show': True,
+            'choices': [{
+                'link': link({year_field: str(year.year)}),
+                'title': str(year.year),
+            } for year in years]
+        }
 
 
 @register.inclusion_tag('admin/search_form.html')

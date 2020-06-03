@@ -319,13 +319,15 @@ class MigrationOptimizer(object):
             migrations.AlterField,
         )
         # If it's a model level operation, let it through if there's
-        # nothing that looks like a reference to us in 'other'.
-        if isinstance(operation, MODEL_LEVEL_OPERATIONS):
-            if not other.references_model(operation.name, app_label):
-                return True
+            # nothing that looks like a reference to us in 'other'.
+        if isinstance(
+            operation, MODEL_LEVEL_OPERATIONS
+        ) and not other.references_model(operation.name, app_label):
+            return True
         # If it's field level, only let it through things that don't reference
-        # the field (which includes not referencing the model)
-        if isinstance(operation, FIELD_LEVEL_OPERATIONS):
-            if not other.references_field(operation.model_name, operation.name, app_label):
-                return True
-        return False
+            # the field (which includes not referencing the model)
+        return isinstance(
+            operation, FIELD_LEVEL_OPERATIONS
+        ) and not other.references_field(
+            operation.model_name, operation.name, app_label
+        )

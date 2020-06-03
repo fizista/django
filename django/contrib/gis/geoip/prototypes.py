@@ -53,23 +53,22 @@ GeoIPRecord_delete.restype = None
 
 # For retrieving records by name or address.
 def check_record(result, func, cargs):
-    if result:
-        # Checking the pointer to the C structure, if valid pull out elements
-        # into a dicionary.
-        rec = result.contents
-        record = dict((fld, getattr(rec, fld)) for fld, ctype in rec._fields_)
-
-        # Now converting the strings to unicode using the proper encoding.
-        encoding = geoip_encodings[record['charset']]
-        for char_field in geoip_char_fields:
-            if record[char_field]:
-                record[char_field] = record[char_field].decode(encoding)
-
-        # Free the memory allocated for the struct & return.
-        GeoIPRecord_delete(result)
-        return record
-    else:
+    if not result:
         return None
+    # Checking the pointer to the C structure, if valid pull out elements
+    # into a dicionary.
+    rec = result.contents
+    record = {fld: getattr(rec, fld) for fld, ctype in rec._fields_}
+
+    # Now converting the strings to unicode using the proper encoding.
+    encoding = geoip_encodings[record['charset']]
+    for char_field in geoip_char_fields:
+        if record[char_field]:
+            record[char_field] = record[char_field].decode(encoding)
+
+    # Free the memory allocated for the struct & return.
+    GeoIPRecord_delete(result)
+    return record
 
 
 def record_output(func):

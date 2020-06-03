@@ -29,11 +29,11 @@ def get_srid_info(srid, connection):
         # No `spatial_ref_sys` table in spatial backend (e.g., MySQL).
         return None, None, None
 
-    if not connection.alias in _srid_cache:
+    if connection.alias not in _srid_cache:
         # Initialize SRID dictionary for database if it doesn't exist.
         _srid_cache[connection.alias] = {}
 
-    if not srid in _srid_cache[connection.alias]:
+    if srid not in _srid_cache[connection.alias]:
         # Use `SpatialRefSys` model to query for spatial reference info.
         sr = SpatialRefSys.objects.using(connection.alias).get(srid=srid)
         units, units_name = sr.units
@@ -191,8 +191,7 @@ class GeometryField(Field):
         geom.srid = self.get_srid(geom)
 
         if seq_value:
-            lookup_val = [geom]
-            lookup_val.extend(value[1:])
+            lookup_val = [geom, *value[1:]]
             return tuple(lookup_val)
         else:
             return geom
@@ -204,7 +203,7 @@ class GeometryField(Field):
         has no SRID, then that of the field will be returned.
         """
         gsrid = geom.srid  # SRID of given geometry.
-        if gsrid is None or self.srid == -1 or (gsrid == -1 and self.srid != -1):
+        if gsrid is None or self.srid == -1 or gsrid == -1:
             return self.srid
         else:
             return gsrid
@@ -225,8 +224,11 @@ class GeometryField(Field):
                     'srid': self.srid,
                     }
         defaults.update(kwargs)
-        if (self.dim > 2 and not 'widget' in kwargs and
-                not getattr(defaults['form_class'].widget, 'supports_3d', False)):
+        if (
+            self.dim > 2
+            and 'widget' not in kwargs
+            and not getattr(defaults['form_class'].widget, 'supports_3d', False)
+        ):
             defaults['widget'] = forms.Textarea
         return super(GeometryField, self).formfield(**defaults)
 

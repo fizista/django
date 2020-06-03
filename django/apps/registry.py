@@ -66,11 +66,8 @@ class Apps(object):
             return
 
         # populate() might be called by two threads in parallel on servers
-        # that create threads before initializing the WSGI callable.
+            # that create threads before initializing the WSGI callable.
         with self._lock:
-            if self.ready:
-                return
-
             # app_config should be pristine, otherwise the code below won't
             # guarantee that the order matches the order in INSTALLED_APPS.
             if self.app_configs:
@@ -78,10 +75,7 @@ class Apps(object):
 
             # Load app configs and app modules.
             for entry in installed_apps:
-                if isinstance(entry, AppConfig):
-                    app_config = entry
-                else:
-                    app_config = AppConfig.create(entry)
+                app_config = entry if isinstance(entry, AppConfig) else AppConfig.create(entry)
                 if app_config.label in self.app_configs:
                     raise ImproperlyConfigured(
                         "Application labels aren't unique, "
@@ -255,7 +249,7 @@ class Apps(object):
         This method is safe is the sense that it doesn't trigger any imports.
         """
         available = set(available)
-        installed = set(app_config.name for app_config in self.get_app_configs())
+        installed = {app_config.name for app_config in self.get_app_configs()}
         if not available.issubset(installed):
             raise ValueError("Available apps isn't a subset of installed "
                 "apps, extra apps: %s" % ", ".join(available - installed))
@@ -397,10 +391,7 @@ class Apps(object):
             "[a.path for a in get_app_configs()] supersedes get_app_paths().",
             PendingDeprecationWarning, stacklevel=2)
         self.check_ready()
-        app_paths = []
-        for app in self.get_apps():
-            app_paths.append(self._get_app_path(app))
-        return app_paths
+        return [self._get_app_path(app) for app in self.get_apps()]
 
     def register_models(self, app_label, *models):
         """

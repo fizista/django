@@ -108,7 +108,11 @@ class Command(BaseCommand):
             if run_syncdb:
                 self.stdout.write(self.style.MIGRATE_LABEL("  Synchronize unmigrated apps: ") + (", ".join(executor.loader.unmigrated_apps) or "(none)"))
             if target_app_labels_only:
-                self.stdout.write(self.style.MIGRATE_LABEL("  Apply all migrations: ") + (", ".join(set(a for a, n in targets)) or "(none)"))
+                self.stdout.write(
+                    self.style.MIGRATE_LABEL("  Apply all migrations: ")
+                    + (", ".join({a for a, n in targets}) or "(none)")
+                )
+
             else:
                 if targets[0][1] is None:
                     self.stdout.write(self.style.MIGRATE_LABEL("  Unapply all migrations: ") + "%s" % (targets[0][0], ))
@@ -153,7 +157,7 @@ class Command(BaseCommand):
             if action == "apply_start":
                 self.stdout.write("  Applying %s..." % migration, ending="")
                 self.stdout.flush()
-            elif action == "apply_success":
+            elif action in ["apply_success", "unapply_success"]:
                 if fake:
                     self.stdout.write(self.style.MIGRATE_SUCCESS(" FAKED"))
                 else:
@@ -161,11 +165,6 @@ class Command(BaseCommand):
             elif action == "unapply_start":
                 self.stdout.write("  Unapplying %s..." % migration, ending="")
                 self.stdout.flush()
-            elif action == "unapply_success":
-                if fake:
-                    self.stdout.write(self.style.MIGRATE_SUCCESS(" FAKED"))
-                else:
-                    self.stdout.write(self.style.MIGRATE_SUCCESS(" OK"))
 
     def sync_apps(self, connection, app_labels):
         "Runs the old syncdb-style operation on a list of app_labels."

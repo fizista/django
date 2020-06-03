@@ -185,7 +185,7 @@ class RenameField(Operation):
         return name.lower() == self.model_name.lower()
 
     def references_field(self, model_name, name, app_label=None):
-        return self.references_model(model_name) and (
-            name.lower() == self.old_name.lower() or
-            name.lower() == self.new_name.lower()
-        )
+        return self.references_model(model_name) and name.lower() in [
+            self.old_name.lower(),
+            self.new_name.lower(),
+        ]

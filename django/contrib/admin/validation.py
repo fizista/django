@@ -138,7 +138,7 @@ class BaseValidator(object):
                     raise ImproperlyConfigured("'%s.radio_fields['%s']' "
                             "is neither an instance of ForeignKey nor does "
                             "have choices set." % (cls.__name__, field))
-                if not val in (HORIZONTAL, VERTICAL):
+                if val not in (HORIZONTAL, VERTICAL):
                     raise ImproperlyConfigured("'%s.radio_fields['%s']' "
                             "is neither admin.HORIZONTAL nor admin.VERTICAL."
                             % (cls.__name__, field))
@@ -161,44 +161,50 @@ class BaseValidator(object):
                     get_field(cls, model, "prepopulated_fields['%s'][%d]" % (field, idx), f)
 
     def validate_view_on_site_url(self, cls, model):
-        if hasattr(cls, 'view_on_site'):
-            if not callable(cls.view_on_site) and not isinstance(cls.view_on_site, bool):
-                raise ImproperlyConfigured("%s.view_on_site is not a callable or a boolean value." % cls.__name__)
+        if (
+            hasattr(cls, 'view_on_site')
+            and not callable(cls.view_on_site)
+            and not isinstance(cls.view_on_site, bool)
+        ):
+            raise ImproperlyConfigured("%s.view_on_site is not a callable or a boolean value." % cls.__name__)
 
     def validate_ordering(self, cls, model):
         " Validate that ordering refers to existing fields or is random. "
         # ordering = None
-        if cls.ordering:
-            check_isseq(cls, 'ordering', cls.ordering)
-            for idx, field in enumerate(cls.ordering):
-                if field == '?' and len(cls.ordering) != 1:
-                    raise ImproperlyConfigured("'%s.ordering' has the random "
-                            "ordering marker '?', but contains other fields as "
-                            "well. Please either remove '?' or the other fields."
-                            % cls.__name__)
-                if field == '?':
-                    continue
-                if field.startswith('-'):
-                    field = field[1:]
-                # Skip ordering in the format field1__field2 (FIXME: checking
-                # this format would be nice, but it's a little fiddly).
-                if '__' in field:
-                    continue
-                get_field(cls, model, 'ordering[%d]' % idx, field)
+        if not cls.ordering:
+            return
+        check_isseq(cls, 'ordering', cls.ordering)
+        for idx, field in enumerate(cls.ordering):
+            if field == '?' and len(cls.ordering) != 1:
+                raise ImproperlyConfigured("'%s.ordering' has the random "
+                        "ordering marker '?', but contains other fields as "
+                        "well. Please either remove '?' or the other fields."
+                        % cls.__name__)
+            if field == '?':
+                continue
+            if field.startswith('-'):
+                field = field[1:]
+            # Skip ordering in the format field1__field2 (FIXME: checking
+            # this format would be nice, but it's a little fiddly).
+            if '__' in field:
+                continue
+            get_field(cls, model, 'ordering[%d]' % idx, field)
 
     def validate_readonly_fields(self, cls, model):
         " Validate that readonly_fields refers to proper attribute or field. "
         if hasattr(cls, "readonly_fields"):
             check_isseq(cls, "readonly_fields", cls.readonly_fields)
             for idx, field in enumerate(cls.readonly_fields):
-                if not callable(field):
-                    if not hasattr(cls, field):
-                        if not hasattr(model, field):
-                            try:
-                                model._meta.get_field(field)
-                            except models.FieldDoesNotExist:
-                                raise ImproperlyConfigured("%s.readonly_fields[%d], %r is not a callable or an attribute of %r or found in the model %r."
-                                    % (cls.__name__, idx, field, cls.__name__, model._meta.object_name))
+                if (
+                    not callable(field)
+                    and not hasattr(cls, field)
+                    and not hasattr(model, field)
+                ):
+                    try:
+                        model._meta.get_field(field)
+                    except models.FieldDoesNotExist:
+                        raise ImproperlyConfigured("%s.readonly_fields[%d], %r is not a callable or an attribute of %r or found in the model %r."
+                            % (cls.__name__, idx, field, cls.__name__, model._meta.object_name))
 
 
 class ModelAdminValidator(BaseValidator):
@@ -231,31 +237,35 @@ class ModelAdminValidator(BaseValidator):
     def check_inline(self, cls, parent_model):
         " Validate inline class's fk field is not excluded. "
         fk = _get_foreign_key(parent_model, cls.model, fk_name=cls.fk_name, can_fail=True)
-        if hasattr(cls, 'exclude') and cls.exclude:
-            if fk and fk.name in cls.exclude:
-                raise ImproperlyConfigured("%s cannot exclude the field "
-                        "'%s' - this is the foreign key to the parent model "
-                        "%s.%s." % (cls.__name__, fk.name, parent_model._meta.app_label, parent_model.__name__))
+        if (
+            hasattr(cls, 'exclude')
+            and cls.exclude
+            and fk
+            and fk.name in cls.exclude
+        ):
+            raise ImproperlyConfigured("%s cannot exclude the field "
+                    "'%s' - this is the foreign key to the parent model "
+                    "%s.%s." % (cls.__name__, fk.name, parent_model._meta.app_label, parent_model.__name__))
 
     def validate_list_display(self, cls, model):
         " Validate that list_display only contains fields or usable attributes. "
-        if hasattr(cls, 'list_display'):
-            check_isseq(cls, 'list_display', cls.list_display)
-            for idx, field in enumerate(cls.list_display):
-                if not callable(field):
-                    if not hasattr(cls, field):
-                        if not hasattr(model, field):
-                            try:
-                                model._meta.get_field(field)
-                            except models.FieldDoesNotExist:
-                                raise ImproperlyConfigured("%s.list_display[%d], %r is not a callable or an attribute of %r or found in the model %r."
-                                    % (cls.__name__, idx, field, cls.__name__, model._meta.object_name))
-                        else:
-                            # getattr(model, field) could be an X_RelatedObjectsDescriptor
-                            f = fetch_attr(cls, model, "list_display[%d]" % idx, field)
-                            if isinstance(f, models.ManyToManyField):
-                                raise ImproperlyConfigured("'%s.list_display[%d]', '%s' is a ManyToManyField which is not supported."
-                                    % (cls.__name__, idx, field))
+        if not hasattr(cls, 'list_display'):
+            return
+        check_isseq(cls, 'list_display', cls.list_display)
+        for idx, field in enumerate(cls.list_display):
+            if not callable(field) and not hasattr(cls, field):
+                if not hasattr(model, field):
+                    try:
+                        model._meta.get_field(field)
+                    except models.FieldDoesNotExist:
+                        raise ImproperlyConfigured("%s.list_display[%d], %r is not a callable or an attribute of %r or found in the model %r."
+                            % (cls.__name__, idx, field, cls.__name__, model._meta.object_name))
+                else:
+                    # getattr(model, field) could be an X_RelatedObjectsDescriptor
+                    f = fetch_attr(cls, model, "list_display[%d]" % idx, field)
+                    if isinstance(f, models.ManyToManyField):
+                        raise ImproperlyConfigured("'%s.list_display[%d]', '%s' is a ManyToManyField which is not supported."
+                            % (cls.__name__, idx, field))
 
     def validate_list_display_links(self, cls, model):
         " Validate that list_display_links either is None or a unique subset of list_display."
@@ -334,33 +344,34 @@ class ModelAdminValidator(BaseValidator):
         Validate that list_editable is a sequence of editable fields from
         list_display without first element.
         """
-        if hasattr(cls, 'list_editable') and cls.list_editable:
-            check_isseq(cls, 'list_editable', cls.list_editable)
-            for idx, field_name in enumerate(cls.list_editable):
-                try:
-                    field = model._meta.get_field_by_name(field_name)[0]
-                except models.FieldDoesNotExist:
-                    raise ImproperlyConfigured("'%s.list_editable[%d]' refers to a "
-                        "field, '%s', not defined on %s.%s."
-                        % (cls.__name__, idx, field_name, model._meta.app_label, model.__name__))
-                if field_name not in cls.list_display:
-                    raise ImproperlyConfigured("'%s.list_editable[%d]' refers to "
-                        "'%s' which is not defined in 'list_display'."
-                        % (cls.__name__, idx, field_name))
-                if cls.list_display_links is not None:
-                    if field_name in cls.list_display_links:
-                        raise ImproperlyConfigured("'%s' cannot be in both '%s.list_editable'"
-                            " and '%s.list_display_links'"
-                            % (field_name, cls.__name__, cls.__name__))
-                    if not cls.list_display_links and cls.list_display[0] in cls.list_editable:
-                        raise ImproperlyConfigured("'%s.list_editable[%d]' refers to"
-                            " the first field in list_display, '%s', which can't be"
-                            " used unless list_display_links is set."
-                            % (cls.__name__, idx, cls.list_display[0]))
-                if not field.editable:
-                    raise ImproperlyConfigured("'%s.list_editable[%d]' refers to a "
-                        "field, '%s', which isn't editable through the admin."
-                        % (cls.__name__, idx, field_name))
+        if not (hasattr(cls, 'list_editable') and cls.list_editable):
+            return
+        check_isseq(cls, 'list_editable', cls.list_editable)
+        for idx, field_name in enumerate(cls.list_editable):
+            try:
+                field = model._meta.get_field_by_name(field_name)[0]
+            except models.FieldDoesNotExist:
+                raise ImproperlyConfigured("'%s.list_editable[%d]' refers to a "
+                    "field, '%s', not defined on %s.%s."
+                    % (cls.__name__, idx, field_name, model._meta.app_label, model.__name__))
+            if field_name not in cls.list_display:
+                raise ImproperlyConfigured("'%s.list_editable[%d]' refers to "
+                    "'%s' which is not defined in 'list_display'."
+                    % (cls.__name__, idx, field_name))
+            if cls.list_display_links is not None:
+                if field_name in cls.list_display_links:
+                    raise ImproperlyConfigured("'%s' cannot be in both '%s.list_editable'"
+                        " and '%s.list_display_links'"
+                        % (field_name, cls.__name__, cls.__name__))
+                if not cls.list_display_links and cls.list_display[0] in cls.list_editable:
+                    raise ImproperlyConfigured("'%s.list_editable[%d]' refers to"
+                        " the first field in list_display, '%s', which can't be"
+                        " used unless list_display_links is set."
+                        % (cls.__name__, idx, cls.list_display[0]))
+            if not field.editable:
+                raise ImproperlyConfigured("'%s.list_editable[%d]' refers to a "
+                    "field, '%s', which isn't editable through the admin."
+                    % (cls.__name__, idx, field_name))
 
     def validate_search_fields(self, cls, model):
         " Validate search_fields is a sequence. "

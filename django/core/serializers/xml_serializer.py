@@ -49,7 +49,7 @@ class Serializer(base.Serializer):
 
         self.indent(1)
         attrs = {"model": smart_text(obj._meta)}
-        if not self.use_natural_primary_keys or not hasattr(obj, 'natural_key'):
+        if not (self.use_natural_primary_keys and hasattr(obj, 'natural_key')):
             obj_pk = obj._get_pk_val()
             if obj_pk is not None:
                 attrs['pk'] = smart_text(obj_pk)
@@ -292,12 +292,10 @@ def getInnerText(node):
     # inspired by http://mail.python.org/pipermail/xml-sig/2005-March/011022.html
     inner_text = []
     for child in node.childNodes:
-        if child.nodeType == child.TEXT_NODE or child.nodeType == child.CDATA_SECTION_NODE:
+        if child.nodeType in [child.TEXT_NODE, child.CDATA_SECTION_NODE]:
             inner_text.append(child.data)
         elif child.nodeType == child.ELEMENT_NODE:
             inner_text.extend(getInnerText(child))
-        else:
-            pass
     return "".join(inner_text)
 
 

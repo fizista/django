@@ -21,13 +21,13 @@ class AdminAuthenticationForm(AuthenticationForm):
     def clean(self):
         username = self.cleaned_data.get('username')
         password = self.cleaned_data.get('password')
-        message = ERROR_MESSAGE
-        params = {'username': self.username_field.verbose_name}
-
         if username and password:
             self.user_cache = authenticate(username=username, password=password)
+            message = ERROR_MESSAGE
+            params = {'username': self.username_field.verbose_name}
+
             if self.user_cache is None:
                 raise forms.ValidationError(message, code='invalid', params=params)
-            elif not self.user_cache.is_active or not self.user_cache.is_staff:
+            elif not (self.user_cache.is_active and self.user_cache.is_staff):
                 raise forms.ValidationError(message, code='invalid', params=params)
         return self.cleaned_data

@@ -145,7 +145,7 @@ class ListMixin(object):
             del self[:]
         else:
             cache = list(self)
-            for i in range(n - 1):
+            for _ in range(n - 1):
                 self.extend(cache)
         return self
 
@@ -179,11 +179,7 @@ class ListMixin(object):
     ## Non-mutating ##
     def count(self, val):
         "Standard list count method"
-        count = 0
-        for i in self:
-            if val == i:
-                count += 1
-        return count
+        return sum(1 for i in self if val == i)
 
     def index(self, val):
         "Standard list index method"
@@ -256,9 +252,10 @@ class ListMixin(object):
         raise self._IndexError('invalid index: %s' % str(index))
 
     def _check_allowed(self, items):
-        if hasattr(self, '_allowed'):
-            if False in [isinstance(val, self._allowed) for val in items]:
-                raise TypeError('Invalid type encountered in the arguments.')
+        if hasattr(self, '_allowed') and False in [
+            isinstance(val, self._allowed) for val in items
+        ]:
+            raise TypeError('Invalid type encountered in the arguments.')
 
     def _set_slice(self, index, values):
         "Assign values to a slice of the object"
@@ -323,11 +320,8 @@ class ListMixin(object):
         def newItems():
             for i in xrange(origLen + 1):
                 if i == start:
-                    for val in valueList:
-                        yield val
-
-                if i < origLen:
-                    if i < start or i >= stop:
-                        yield self._get_single_internal(i)
+                    yield from valueList
+                if i < origLen and (i < start or i >= stop):
+                    yield self._get_single_internal(i)
 
         self._rebuild(newLen, newItems())

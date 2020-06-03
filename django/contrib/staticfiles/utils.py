@@ -11,10 +11,7 @@ def matches_patterns(path, patterns=None):
     """
     if patterns is None:
         patterns = []
-    for pattern in patterns:
-        if fnmatch.fnmatchcase(path, pattern):
-            return True
-    return False
+    return any(fnmatch.fnmatchcase(path, pattern) for pattern in patterns)
 
 
 def get_files(storage, ignore_patterns=None, location=''):
@@ -36,8 +33,7 @@ def get_files(storage, ignore_patterns=None, location=''):
             continue
         if location:
             dir = os.path.join(location, dir)
-        for fn in get_files(storage, ignore_patterns, dir):
-            yield fn
+        yield from get_files(storage, ignore_patterns, dir)
 
 
 def check_settings(base_url=None):

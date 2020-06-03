@@ -6,6 +6,7 @@
  This module also houses GEOS Pointer utilities, including
  get_pointer_arr(), and GEOM_PTR.
 """
+
 import logging
 import os
 import re
@@ -43,7 +44,7 @@ else:
 if lib_names:
     for lib_name in lib_names:
         lib_path = find_library(lib_name)
-        if not lib_path is None:
+        if lib_path is not None:
             break
 
 # No GEOS library could be found.
@@ -145,8 +146,17 @@ def geos_version_info():
     m = version_regex.match(ver)
     if not m:
         raise GEOSException('Could not parse version info string "%s"' % ver)
-    return dict((key, m.group(key)) for key in (
-        'version', 'release_candidate', 'capi_version', 'major', 'minor', 'subminor'))
+    return {
+        key: m.group(key)
+        for key in (
+            'version',
+            'release_candidate',
+            'capi_version',
+            'major',
+            'minor',
+            'subminor',
+        )
+    }
 
 # Version numbers and whether or not prepared geometry support is available.
 _verinfo = geos_version_info()

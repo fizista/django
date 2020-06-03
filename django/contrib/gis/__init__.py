@@ -1,6 +1,3 @@
 from django.utils import six
 
-if six.PY3:
-    memoryview = memoryview
-else:
-    memoryview = buffer
+memoryview = memoryview if six.PY3 else buffer

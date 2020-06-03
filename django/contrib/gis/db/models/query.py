@@ -152,10 +152,10 @@ class GeoQuerySet(QuerySet):
         if not isinstance(precision, six.integer_types):
             raise TypeError('Precision keyword must be set with an integer.')
 
+        options = 0
         # Setting the options flag -- which depends on which version of
-        # PostGIS we're using. SpatiaLite only uses the first group of options.
+            # PostGIS we're using. SpatiaLite only uses the first group of options.
         if backend.spatial_version >= (1, 4, 0):
-            options = 0
             if crs and bbox:
                 options = 3
             elif bbox:
@@ -163,7 +163,6 @@ class GeoQuerySet(QuerySet):
             elif crs:
                 options = 2
         else:
-            options = 0
             if crs and bbox:
                 options = 3
             elif crs:
@@ -466,8 +465,8 @@ class GeoQuerySet(QuerySet):
             raise TypeError('%s output only available on GeometryFields.' % func)
 
         # If the `geo_field_type` keyword was used, then enforce that
-        # type limitation.
-        if not geo_field_type is None and not isinstance(geo_field, geo_field_type):
+            # type limitation.
+        if geo_field_type is not None and not isinstance(geo_field, geo_field_type):
             raise TypeError('"%s" stored procedures may only be called on %ss.' % (func, geo_field_type.__name__))
 
         # Setting the procedure args.
@@ -487,8 +486,8 @@ class GeoQuerySet(QuerySet):
             raise TypeError('%s aggregate only available on GeometryFields.' % aggregate.name)
 
         # Checking if there are any geo field type limitations on this
-        # aggregate (e.g. ST_Makeline only operates on PointFields).
-        if not geo_field_type is None and not isinstance(geo_field, geo_field_type):
+            # aggregate (e.g. ST_Makeline only operates on PointFields).
+        if geo_field_type is not None and not isinstance(geo_field, geo_field_type):
             raise TypeError('%s aggregate may only be called on %ss.' % (aggregate.name, geo_field_type.__name__))
 
         # Getting the string expression of the field name, as this is the
@@ -638,7 +637,7 @@ class GeoQuerySet(QuerySet):
         if backend.oracle:
             if distance:
                 procedure_fmt = '%(geo_col)s,%(geom)s,%(tolerance)s'
-            elif length or perimeter:
+            else:
                 procedure_fmt = '%(geo_col)s,%(tolerance)s'
             procedure_args['tolerance'] = tolerance
         else:
@@ -684,13 +683,16 @@ class GeoQuerySet(QuerySet):
 
                 if not geography and geodetic:
                     # Spherical distance calculation is needed (because the geographic
-                    # field is geodetic). However, the PostGIS ST_distance_sphere/spheroid()
-                    # procedures may only do queries from point columns to point geometries
-                    # some error checking is required.
+                                    # field is geodetic). However, the PostGIS ST_distance_sphere/spheroid()
+                                    # procedures may only do queries from point columns to point geometries
+                                    # some error checking is required.
                     if not backend.geography:
                         if not isinstance(geo_field, PointField):
                             raise ValueError('Spherical distance calculation only supported on PointFields.')
-                        if not str(Geometry(memoryview(params[0].ewkb)).geom_type) == 'Point':
+                        if (
+                            str(Geometry(memoryview(params[0].ewkb)).geom_type)
+                            != 'Point'
+                        ):
                             raise ValueError('Spherical distance calculation only supported with Point Geometry parameters')
                     # The `function` procedure argument needs to be set differently for
                     # geodetic distance calculations.
@@ -700,7 +702,7 @@ class GeoQuerySet(QuerySet):
                         procedure_args.update({'function': backend.distance_spheroid, 'spheroid': params[1]})
                     else:
                         procedure_args.update({'function': backend.distance_sphere})
-            elif length or perimeter:
+            else:
                 procedure_fmt = '%(geo_col)s'
                 if not geography and geodetic and length:
                     # There's no `length_sphere`, and `length_spheroid` also
@@ -711,7 +713,7 @@ class GeoQuerySet(QuerySet):
                     # Use 3D variants of perimeter and length routines on PostGIS.
                     if perimeter:
                         procedure_args.update({'function': backend.perimeter3d})
-                    elif length:
+                    else:
                         procedure_args.update({'function': backend.length3d})
 
         # Setting up the settings for `_spatial_attribute`.
@@ -766,7 +768,7 @@ class GeoQuerySet(QuerySet):
         ForeignKey relation to the current model.
         """
         opts = self.model._meta
-        if not geo_field in opts.fields:
+        if geo_field not in opts.fields:
             # Is this operation going to be on a related geographic field?
             # If so, it'll have to be added to the select related information
             # (e.g., if 'location__point' was given as the field name).
@@ -777,7 +779,7 @@ class GeoQuerySet(QuerySet):
                 if field == geo_field:
                     return compiler._field_column(geo_field, rel_table)
             raise ValueError("%r not in self.query.related_select_cols" % geo_field)
-        elif not geo_field in opts.local_fields:
+        elif geo_field not in opts.local_fields:
             # This geographic field is inherited from another model, so we have to
             # use the db table for the _parent_ model instead.
             tmp_fld, parent_model, direct, m2m = opts.get_field_by_name(geo_field.name)

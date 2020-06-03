@@ -46,7 +46,7 @@ class MigrationRecorder(object):
         Returns a set of (app, name) of applied migrations.
         """
         self.ensure_schema()
-        return set(tuple(x) for x in self.Migration.objects.values_list("app", "name"))
+        return {tuple(x) for x in self.Migration.objects.values_list("app", "name")}
 
     def record_applied(self, app, name):
         """

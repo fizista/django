@@ -202,10 +202,7 @@ class GEOSGeometry(GEOSBase, ListMixin):
     def has_cs(self):
         "Returns True if this Geometry has a coordinate sequence, False if not."
         # Only these geometries are allowed to have coordinate sequences.
-        if isinstance(self, (Point, LineString, LinearRing)):
-            return True
-        else:
-            return False
+        return isinstance(self, (Point, LineString, LinearRing))
 
     def _set_cs(self):
         "Sets the coordinate sequence for this Geometry."

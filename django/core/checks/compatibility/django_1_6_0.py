@@ -8,8 +8,7 @@ from .. import Warning, register
 
 @register('compatibility')
 def check_1_6_compatibility(**kwargs):
-    errors = []
-    errors.extend(_check_test_runner(**kwargs))
+    errors = list(_check_test_runner(**kwargs))
     errors.extend(_check_boolean_field_default_value(**kwargs))
     return errors
 

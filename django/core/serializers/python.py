@@ -39,7 +39,7 @@ class Serializer(base.Serializer):
             "model": smart_text(obj._meta),
             "fields": self._current,
         }
-        if not self.use_natural_primary_keys or not hasattr(obj, 'natural_key'):
+        if not (self.use_natural_primary_keys and hasattr(obj, 'natural_key')):
             data["pk"] = smart_text(obj._get_pk_val(), strings_only=True)
 
         return data
@@ -57,10 +57,7 @@ class Serializer(base.Serializer):
     def handle_fk_field(self, obj, field):
         if self.use_natural_foreign_keys and hasattr(field.rel.to, 'natural_key'):
             related = getattr(obj, field.name)
-            if related:
-                value = related.natural_key()
-            else:
-                value = None
+            value = related.natural_key() if related else None
         else:
             value = getattr(obj, field.get_attname())
         self._current[field.name] = value

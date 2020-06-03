@@ -124,10 +124,12 @@ class MigrationLoader(object):
     def get_migration_by_prefix(self, app_label, name_prefix):
         "Returns the migration(s) which match the given app label and name _prefix_"
         # Do the search
-        results = []
-        for l, n in self.disk_migrations:
-            if l == app_label and n.startswith(name_prefix):
-                results.append((l, n))
+        results = [
+            (l, n)
+            for l, n in self.disk_migrations
+            if l == app_label and n.startswith(name_prefix)
+        ]
+
         if len(results) > 1:
             raise AmbiguityError("There is more than one migration for '%s' with the prefix '%s'" % (app_label, name_prefix))
         elif len(results) == 0:
@@ -240,7 +242,7 @@ class MigrationLoader(object):
             if app_label in seen_apps:
                 conflicting_apps.add(app_label)
             seen_apps.setdefault(app_label, set()).add(migration_name)
-        return dict((app_label, seen_apps[app_label]) for app_label in conflicting_apps)
+        return {app_label: seen_apps[app_label] for app_label in conflicting_apps}
 
 
 class BadMigrationError(Exception):

@@ -51,7 +51,7 @@ class Command(BaseCommand):
             p2 = self._get_pass("Password (again): ")
             if p1 != p2:
                 self.stdout.write("Passwords do not match. Please try again.\n")
-                count = count + 1
+                count += 1
 
         if count == MAX_TRIES:
             raise CommandError("Aborting password change for user '%s' after %s attempts" % (u, count))

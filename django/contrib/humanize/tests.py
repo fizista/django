@@ -46,50 +46,50 @@ class HumanizeTests(TransRealMixin, TestCase):
                              msg="%s test failed, produced '%s', should've produced '%s'" % (method, rendered, result))
 
     def test_ordinal(self):
-        test_list = ('1', '2', '3', '4', '11', '12',
-                     '13', '101', '102', '103', '111',
-                     'something else', None)
-        result_list = ('1st', '2nd', '3rd', '4th', '11th',
-                       '12th', '13th', '101st', '102nd', '103rd',
-                       '111th', 'something else', None)
-
         with translation.override('en'):
+            test_list = ('1', '2', '3', '4', '11', '12',
+                         '13', '101', '102', '103', '111',
+                         'something else', None)
+            result_list = ('1st', '2nd', '3rd', '4th', '11th',
+                           '12th', '13th', '101st', '102nd', '103rd',
+                           '111th', 'something else', None)
+
             self.humanize_tester(test_list, result_list, 'ordinal')
 
     def test_i18n_html_ordinal(self):
         """Allow html in output on i18n strings"""
-        test_list = ('1', '2', '3', '4', '11', '12',
-                     '13', '101', '102', '103', '111',
-                     'something else', None)
-        result_list = ('1<sup>er</sup>', '2<sup>e</sup>', '3<sup>e</sup>', '4<sup>e</sup>',
-                       '11<sup>e</sup>', '12<sup>e</sup>', '13<sup>e</sup>', '101<sup>er</sup>',
-                       '102<sup>e</sup>', '103<sup>e</sup>', '111<sup>e</sup>', 'something else',
-                       'None')
-
         with translation.override('fr-fr'):
+            test_list = ('1', '2', '3', '4', '11', '12',
+                         '13', '101', '102', '103', '111',
+                         'something else', None)
+            result_list = ('1<sup>er</sup>', '2<sup>e</sup>', '3<sup>e</sup>', '4<sup>e</sup>',
+                           '11<sup>e</sup>', '12<sup>e</sup>', '13<sup>e</sup>', '101<sup>er</sup>',
+                           '102<sup>e</sup>', '103<sup>e</sup>', '111<sup>e</sup>', 'something else',
+                           'None')
+
             self.humanize_tester(test_list, result_list, 'ordinal', lambda x: x)
 
     def test_intcomma(self):
         test_list = (100, 1000, 10123, 10311, 1000000, 1234567.25,
                      '100', '1000', '10123', '10311', '1000000', '1234567.1234567', Decimal('1234567.1234567'),
                      None)
-        result_list = ('100', '1,000', '10,123', '10,311', '1,000,000', '1,234,567.25',
-                       '100', '1,000', '10,123', '10,311', '1,000,000', '1,234,567.1234567', '1,234,567.1234567',
-                     None)
-
         with translation.override('en'):
+            result_list = ('100', '1,000', '10,123', '10,311', '1,000,000', '1,234,567.25',
+                           '100', '1,000', '10,123', '10,311', '1,000,000', '1,234,567.1234567', '1,234,567.1234567',
+                         None)
+
             self.humanize_tester(test_list, result_list, 'intcomma')
 
     def test_l10n_intcomma(self):
         test_list = (100, 1000, 10123, 10311, 1000000, 1234567.25,
                      '100', '1000', '10123', '10311', '1000000', '1234567.1234567', Decimal('1234567.1234567'),
                      None)
-        result_list = ('100', '1,000', '10,123', '10,311', '1,000,000', '1,234,567.25',
-                       '100', '1,000', '10,123', '10,311', '1,000,000', '1,234,567.1234567', '1,234,567.1234567',
-                     None)
-
         with self.settings(USE_L10N=True, USE_THOUSAND_SEPARATOR=False):
             with translation.override('en'):
+                result_list = ('100', '1,000', '10,123', '10,311', '1,000,000', '1,234,567.25',
+                               '100', '1,000', '10,123', '10,311', '1,000,000', '1,234,567.1234567', '1,234,567.1234567',
+                             None)
+
                 self.humanize_tester(test_list, result_list, 'intcomma')
 
     def test_intcomma_without_number_grouping(self):
@@ -98,41 +98,41 @@ class HumanizeTests(TransRealMixin, TestCase):
             self.humanize_tester([100], ['100'], 'intcomma')
 
     def test_intword(self):
-        test_list = ('100', '1000000', '1200000', '1290000',
-                     '1000000000', '2000000000', '6000000000000',
-                     '1300000000000000', '3500000000000000000000',
-                     '8100000000000000000000000000000000', None)
-        result_list = ('100', '1.0 million', '1.2 million', '1.3 million',
-                       '1.0 billion', '2.0 billion', '6.0 trillion',
-                       '1.3 quadrillion', '3.5 sextillion',
-                       '8.1 decillion', None)
         with translation.override('en'):
+            test_list = ('100', '1000000', '1200000', '1290000',
+                         '1000000000', '2000000000', '6000000000000',
+                         '1300000000000000', '3500000000000000000000',
+                         '8100000000000000000000000000000000', None)
+            result_list = ('100', '1.0 million', '1.2 million', '1.3 million',
+                           '1.0 billion', '2.0 billion', '6.0 trillion',
+                           '1.3 quadrillion', '3.5 sextillion',
+                           '8.1 decillion', None)
             self.humanize_tester(test_list, result_list, 'intword')
 
     def test_i18n_intcomma(self):
-        test_list = (100, 1000, 10123, 10311, 1000000, 1234567.25,
-                     '100', '1000', '10123', '10311', '1000000', None)
-        result_list = ('100', '1.000', '10.123', '10.311', '1.000.000', '1.234.567,25',
-                       '100', '1.000', '10.123', '10.311', '1.000.000', None)
         with self.settings(USE_L10N=True, USE_THOUSAND_SEPARATOR=True):
             with translation.override('de'):
+                test_list = (100, 1000, 10123, 10311, 1000000, 1234567.25,
+                             '100', '1000', '10123', '10311', '1000000', None)
+                result_list = ('100', '1.000', '10.123', '10.311', '1.000.000', '1.234.567,25',
+                               '100', '1.000', '10.123', '10.311', '1.000.000', None)
                 self.humanize_tester(test_list, result_list, 'intcomma')
 
     def test_i18n_intword(self):
-        test_list = ('100', '1000000', '1200000', '1290000',
-                     '1000000000', '2000000000', '6000000000000')
-        result_list = ('100', '1,0 Million', '1,2 Millionen', '1,3 Millionen',
-                       '1,0 Milliarde', '2,0 Milliarden', '6,0 Billionen')
         with self.settings(USE_L10N=True, USE_THOUSAND_SEPARATOR=True):
             with translation.override('de'):
+                test_list = ('100', '1000000', '1200000', '1290000',
+                             '1000000000', '2000000000', '6000000000000')
+                result_list = ('100', '1,0 Million', '1,2 Millionen', '1,3 Millionen',
+                               '1,0 Milliarde', '2,0 Milliarden', '6,0 Billionen')
                 self.humanize_tester(test_list, result_list, 'intword')
 
     def test_apnumber(self):
         test_list = [str(x) for x in range(1, 11)]
         test_list.append(None)
-        result_list = ('one', 'two', 'three', 'four', 'five', 'six',
-                       'seven', 'eight', 'nine', '10', None)
         with translation.override('en'):
+            result_list = ('one', 'two', 'three', 'four', 'five', 'six',
+                           'seven', 'eight', 'nine', '10', None)
             self.humanize_tester(test_list, result_list, 'apnumber')
 
     def test_naturalday(self):

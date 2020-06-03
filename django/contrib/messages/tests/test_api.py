@@ -29,19 +29,19 @@ class ApiTest(TestCase):
         self.assertIn(msg, self.storage.store)
 
     def test_request_is_none(self):
-        msg = 'some message'
-
         self.request._messages = self.storage
 
         with self.assertRaises(TypeError):
+            msg = 'some message'
+
             messages.add_message(None, messages.DEBUG, msg)
 
         self.assertEqual([], self.storage.store)
 
     def test_middleware_missing(self):
-        msg = 'some message'
-
         with self.assertRaises(messages.MessageFailure):
+            msg = 'some message'
+
             messages.add_message(self.request, messages.DEBUG, msg)
 
         self.assertEqual([], self.storage.store)

@@ -434,10 +434,7 @@ class Command(NoArgsCommand):
         contents of a newly created .po file.
         """
         django_dir = os.path.normpath(os.path.join(os.path.dirname(django.__file__)))
-        if self.domain == 'djangojs':
-            domains = ('djangojs', 'django')
-        else:
-            domains = ('django',)
+        domains = ('djangojs', 'django') if self.domain == 'djangojs' else ('django', )
         for domain in domains:
             django_po = os.path.join(django_dir, 'conf', 'locale', locale, 'LC_MESSAGES', '%s.po' % domain)
             if os.path.exists(django_po):

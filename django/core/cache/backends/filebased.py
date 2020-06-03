@@ -64,7 +64,7 @@ class FileBasedCache(BaseCache):
         self._delete(self._key_to_file(key, version))
 
     def _delete(self, fname):
-        if not fname.startswith(self._dir) or not os.path.exists(fname):
+        if not (fname.startswith(self._dir) and os.path.exists(fname)):
             return
         try:
             os.remove(fname)
@@ -147,9 +147,8 @@ class FileBasedCache(BaseCache):
         """
         if not os.path.exists(self._dir):
             return []
-        filelist = [os.path.join(self._dir, fname) for fname
-                    in glob.glob1(self._dir, '*%s' % self.cache_suffix)]
-        return filelist
+        return [os.path.join(self._dir, fname) for fname
+                        in glob.glob1(self._dir, '*%s' % self.cache_suffix)]
 
 
 # For backwards compatibility

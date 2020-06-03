@@ -75,10 +75,7 @@ class TemplateCommand(BaseCommand):
             try:
                 os.makedirs(top_dir)
             except OSError as e:
-                if e.errno == errno.EEXIST:
-                    message = "'%s' already exists" % top_dir
-                else:
-                    message = e
+                message = "'%s' already exists" % top_dir if e.errno == errno.EEXIST else e
                 raise CommandError(message)
         else:
             top_dir = os.path.abspath(path.expanduser(target))
@@ -228,10 +225,7 @@ class TemplateCommand(BaseCommand):
         def cleanup_url(url):
             tmp = url.rstrip('/')
             filename = tmp.split('/')[-1]
-            if url.endswith('/'):
-                display_url = tmp + '/'
-            else:
-                display_url = url
+            display_url = tmp + '/' if url.endswith('/') else url
             return filename, display_url
 
         prefix = 'django_%s_template_' % self.app_or_project

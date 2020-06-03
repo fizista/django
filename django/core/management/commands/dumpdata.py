@@ -134,16 +134,11 @@ class Command(BaseCommand):
                 if model in excluded_models:
                     continue
                 if not model._meta.proxy and router.allow_migrate(using, model):
-                    if use_base_manager:
-                        objects = model._base_manager
-                    else:
-                        objects = model._default_manager
-
+                    objects = model._base_manager if use_base_manager else model._default_manager
                     queryset = objects.using(using).order_by(model._meta.pk.name)
                     if primary_keys:
                         queryset = queryset.filter(pk__in=primary_keys)
-                    for obj in queryset.iterator():
-                        yield obj
+                    yield from queryset.iterator()
 
         try:
             self.stdout.ending = None

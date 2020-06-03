@@ -24,9 +24,10 @@ def lookup_needs_distinct(opts, lookup_path):
     """
     field_name = lookup_path.split('__', 1)[0]
     field = opts.get_field_by_name(field_name)[0]
-    if hasattr(field, 'get_path_info') and any(path.m2m for path in field.get_path_info()):
-        return True
-    return False
+    return bool(
+        hasattr(field, 'get_path_info')
+        and any(path.m2m for path in field.get_path_info())
+    )
 
 
 def prepare_lookup_value(key, value):
@@ -38,10 +39,7 @@ def prepare_lookup_value(key, value):
         value = value.split(',')
     # if key ends with __isnull, special case '' and the string literals 'false' and '0'
     if key.endswith('__isnull'):
-        if value.lower() in ('', 'false', '0'):
-            value = False
-        else:
-            value = True
+        value = False if value.lower() in ('', 'false', '0') else True
     return value
 
 
@@ -182,10 +180,7 @@ class NestedObjects(Collector):
         children = []
         for child in self.edges.get(obj, ()):
             children.extend(self._nested(child, seen, format_callback))
-        if format_callback:
-            ret = [format_callback(obj)]
-        else:
-            ret = [obj]
+        ret = [format_callback(obj)] if format_callback else [obj]
         if children:
             ret.append(children)
         return ret
@@ -254,20 +249,21 @@ def lookup_field(name, obj, model_admin=None):
         f = opts.get_field(name)
     except models.FieldDoesNotExist:
         # For non-field values, the value is either a method, property or
-        # returned via a callable.
+                # returned via a callable.
         if callable(name):
             attr = name
             value = attr(obj)
-        elif (model_admin is not None and hasattr(model_admin, name) and
-          not name == '__str__' and not name == '__unicode__'):
+        elif (
+            model_admin is not None
+            and hasattr(model_admin, name)
+            and name != '__str__'
+            and name != '__unicode__'
+        ):
             attr = getattr(model_admin, name)
             value = attr(obj)
         else:
             attr = getattr(obj, name)
-            if callable(attr):
-                value = attr()
-            else:
-                value = attr
+            value = attr() if callable(attr) else attr
         f = None
     else:
         attr = None
@@ -318,10 +314,7 @@ def label_for_field(name, model, model_admin=None, return_attr=False):
                   hasattr(attr.fget, "short_description")):
                 label = attr.fget.short_description
             elif callable(attr):
-                if attr.__name__ == "<lambda>":
-                    label = "--"
-                else:
-                    label = pretty_name(attr.__name__)
+                label = "--" if attr.__name__ == "<lambda>" else pretty_name(attr.__name__)
             else:
                 label = pretty_name(name)
     if return_attr:
@@ -438,10 +431,7 @@ def get_fields_from_path(model, path):
     pieces = path.split(LOOKUP_SEP)
     fields = []
     for piece in pieces:
-        if fields:
-            parent = get_model_from_relation(fields[-1])
-        else:
-            parent = model
+        parent = get_model_from_relation(fields[-1]) if fields else model
         fields.append(parent._meta.get_field_by_name(piece)[0])
     return fields
 

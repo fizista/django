@@ -316,8 +316,7 @@ class ManifestFilesMixin(HashedFilesMixin):
     def post_process(self, *args, **kwargs):
         all_post_processed = super(ManifestFilesMixin,
                                    self).post_process(*args, **kwargs)
-        for post_processed in all_post_processed:
-            yield post_processed
+        yield from all_post_processed
         payload = {'paths': self.hashed_files, 'version': self.manifest_version}
         if self.exists(self.manifest_name):
             self.delete(self.manifest_name)

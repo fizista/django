@@ -436,7 +436,7 @@ class GEOSTest(unittest.TestCase, TestDataMixin):
             self.assertRaises(TypeError, Polygon, 'foo')
 
             # Polygon(shell, (hole1, ... holeN))
-            rings = tuple(r for r in poly)
+            rings = tuple(poly)
             self.assertEqual(poly, Polygon(rings[0], rings[1:]))
 
             # Polygon(shell_tuple, hole_tuple1, ... , hole_tupleN)
@@ -444,7 +444,7 @@ class GEOSTest(unittest.TestCase, TestDataMixin):
             self.assertEqual(poly, Polygon(*ring_tuples))
 
             # Constructing with tuples of LinearRings.
-            self.assertEqual(poly.wkt, Polygon(*tuple(r for r in poly)).wkt)
+            self.assertEqual(poly.wkt, Polygon(*tuple(poly)).wkt)
             self.assertEqual(poly.wkt, Polygon(*tuple(LinearRing(r.tuple) for r in poly)).wkt)
 
     def test_polygon_comparison(self):
@@ -523,10 +523,7 @@ class GEOSTest(unittest.TestCase, TestDataMixin):
                     self.assertEqual(c1, c2)
 
                     # Constructing the test value to set the coordinate sequence with
-                    if len(c1) == 2:
-                        tset = (5, 23)
-                    else:
-                        tset = (5, 23, 8)
+                    tset = (5, 23) if len(c1) == 2 else (5, 23, 8)
                     cs[i] = tset
 
                     # Making sure every set point matches what we expect
@@ -641,8 +638,8 @@ class GEOSTest(unittest.TestCase, TestDataMixin):
         # Testing SRID keyword on GeometryCollection
         gc = GeometryCollection(Point(5, 23), LineString((0, 0), (1.5, 1.5), (3, 3)), srid=32021)
         self.assertEqual(32021, gc.srid)
-        for i in range(len(gc)):
-            self.assertEqual(32021, gc[i].srid)
+        for item in gc:
+            self.assertEqual(32021, item.srid)
 
         # GEOS may get the SRID from HEXEWKB
         # 'POINT(5 23)' at SRID=4326 in hex form -- obtained from PostGIS
@@ -848,7 +845,7 @@ class GEOSTest(unittest.TestCase, TestDataMixin):
         gc1 = GEOSGeometry(gc_wkt)
 
         # Should also construct ok from individual geometry arguments.
-        gc2 = GeometryCollection(*tuple(g for g in gc1))
+        gc2 = GeometryCollection(*tuple(gc1))
 
         # And, they should be equal.
         self.assertEqual(gc1, gc2)

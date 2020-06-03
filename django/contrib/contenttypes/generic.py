@@ -62,8 +62,7 @@ class GenericForeignKey(six.with_metaclass(RenameGenericForeignKeyMethods)):
         return '%s.%s.%s' % (app, model._meta.object_name, self.name)
 
     def check(self, **kwargs):
-        errors = []
-        errors.extend(self._check_content_type_field())
+        errors = list(self._check_content_type_field())
         errors.extend(self._check_object_id_field())
         errors.extend(self._check_field_name())
         return errors
@@ -443,18 +442,16 @@ class ReverseGenericRelatedObjectsDescriptor(object):
             instance, for_concrete_model=self.for_concrete_model)
 
         join_cols = self.field.get_joining_columns(reverse_join=True)[0]
-        manager = RelatedManager(
-            model=rel_model,
-            instance=instance,
-            source_col_name=qn(join_cols[0]),
-            target_col_name=qn(join_cols[1]),
-            content_type=content_type,
-            content_type_field_name=self.field.content_type_field_name,
-            object_id_field_name=self.field.object_id_field_name,
-            prefetch_cache_name=self.field.attname,
-        )
-
-        return manager
+        return RelatedManager(
+                model=rel_model,
+                instance=instance,
+                source_col_name=qn(join_cols[0]),
+                target_col_name=qn(join_cols[1]),
+                content_type=content_type,
+                content_type_field_name=self.field.content_type_field_name,
+                object_id_field_name=self.field.object_id_field_name,
+                prefetch_cache_name=self.field.attname,
+            )
 
     def __set__(self, instance, value):
         manager = self.__get__(instance)
@@ -525,8 +522,10 @@ def create_generic_related_manager(superclass):
 
             query = {
                 '%s__pk' % self.content_type_field_name: self.content_type.id,
-                '%s__in' % self.object_id_field_name: set(obj._get_pk_val() for obj in instances)
+                '%s__in'
+                % self.object_id_field_name: {obj._get_pk_val() for obj in instances},
             }
+
 
             # We (possibly) need to convert object IDs to the type of the
             # instances' PK in order to match up instances:
@@ -676,10 +675,7 @@ class GenericInlineModelAdmin(InlineModelAdmin):
             fields = kwargs.pop('fields')
         else:
             fields = flatten_fieldsets(self.get_fieldsets(request, obj))
-        if self.exclude is None:
-            exclude = []
-        else:
-            exclude = list(self.exclude)
+        exclude = [] if self.exclude is None else list(self.exclude)
         exclude.extend(self.get_readonly_fields(request, obj))
         if self.exclude is None and hasattr(self.form, '_meta') and self.form._meta.exclude:
             # Take the custom ModelForm's Meta.exclude into account only if the

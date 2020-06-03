@@ -63,8 +63,7 @@ class GEOSFunc(object):
 
     def _set_argtypes(self, argtypes):
         if self.threaded:
-            new_argtypes = [CONTEXT_PTR]
-            new_argtypes.extend(argtypes)
+            new_argtypes = [CONTEXT_PTR, *argtypes]
             self.cfunc.argtypes = new_argtypes
         else:
             self.cfunc.argtypes = argtypes

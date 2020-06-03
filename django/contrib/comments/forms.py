@@ -59,13 +59,12 @@ class CommentSecurityForm(forms.Form):
     def generate_security_data(self):
         """Generate a dict of security data for "initial" data."""
         timestamp = int(time.time())
-        security_dict =   {
-            'content_type'  : str(self.target_object._meta),
-            'object_pk'     : str(self.target_object._get_pk_val()),
-            'timestamp'     : str(timestamp),
-            'security_hash' : self.initial_security_hash(timestamp),
-        }
-        return security_dict
+        return {
+                'content_type'  : str(self.target_object._meta),
+                'object_pk'     : str(self.target_object._get_pk_val()),
+                'timestamp'     : str(timestamp),
+                'security_hash' : self.initial_security_hash(timestamp),
+            }
 
     def initial_security_hash(self, timestamp):
         """
